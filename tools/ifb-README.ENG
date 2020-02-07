@@ -1,0 +1,102 @@
+#
+# Name: ifb utility 
+# Version: 1.0.1
+# Copyright 2009 Coreit! group
+# Author: Andrey Makarov (pauk)
+# Email: pauk1024@list.ru
+# Web: http://coreit.ru
+#
+#
+
+
+ What is this?
+ -------------
+ 
+    It's a command line tool for manage ifb-based network traffic shaping with iproute2/tc 
+using ifb and policy network speed (rate) limiting.
+
+
+ What's required for it work?
+ ----------------------------
+
+    - iproute2,
+	recommended more latest as possible:
+	..to upgrade you may use "yum update iproute" or "aptitude update"..
+	..also you may download new version in source from:
+	    http://www.linuxfoundation.org/collaborate/workgroups/networking/iproute2
+    - Linux kernel supports ifb as module or included:
+	..if ifb is included in your kernel, then you don't need modprobe at ifb startup - 
+	you may disable lsmod/modprobe checking in head section of ifb-script by 
+	change 
+	    flcheckmod="1" 
+	to 
+	    flcheckmod="0" 
+    
+ 
+ How to use it?
+ --------------
+ 
+    1. At first, it's need to up ifb configuration:
+	./ifb up
+      In default used values:
+        --iface=eth1
+        --ifbiface=ifb0
+      So, in default this up interface "ifb0" and bind traffic filters on hw interface eth1.
+      If you want you may change settings at startup:
+        ./ifb up --iface=eth0 --ifbiface=ifb1
+      or
+        ./ifb up --ifbiface=ifb1
+        
+      ...Warning! If you change some default values at startup point, you must
+      use this options in all next commands for operate configuration binded at your specified iface and ifbiface.
+
+    2. Now you may add IP addresses from network of specified iface:
+	./ifb add --addr=192.168.0.112 --ratein=1300kbps --rateout=356kbps
+      or with specifying options:
+        ./ifb add --addr=192.168.0.112 --ratein=1300kbps --rateout=356kbps --iface=eth0 --ifbiface=ifb1
+        
+      ..this create shape filter for IP 192.168.0.112, linked to network of your iface eth1, with 
+      inbound network rate limited to 1300kbps and outbound network rate - 356kbps.
+
+      In options "ratein" and "rateout" you may use values expressions like "kbit", "mbit", "kbps", "mbps" 
+      and etc (see tc manual for rate options)
+      
+    3. For stop network rate limitting for one of IP address run:
+	./ifb del --addr=192.168.0.112
+      or
+        ./ifb del --addr=192.168.0.112 --iface=eth0 --ifbiface=ifb1
+    
+    4. For stop limitting for all clients and unload ifb config run:
+	./ifb down
+    5. Also you may check filter status of some client IP:
+	./ifb check --addr=192.168.0.112 
+      or 
+        ./ifb check --addr=192.168.0.112  --iface=eth0 --ifbiface=ifb1
+      ...this commands let you see exists or not exists ifb filter commands for specified IP address at ingress
+      or egress direction.
+
+    
+ Sintax:
+ -------
+ 
+    ifb <mode> --addr=<client_ip>  [--ratein=<value>] [--rateout=<value>] [--iface=<ifname>] [--ifbiface=<ifb_ifname>]
+    
+    Modes available: up|down|add|del|check
+    
+    Options:
+      --addr=<client_ip> - client IP address from network connected to specified iface.
+      --ratein=<value> - inbound network speed rate limit, value can be with "kbit", "mbit", "kbps", "mbps" and etc.
+      --rateout=<value> - outbound network speed rate limit, value can be with "kbit", "mbit", "kbps", "mbps" and etc.
+      --iface=<ifname> - system network interface which using for bind ifb filters, it's must be a net interface
+        which directly connected to using clients network. In default is "eth1", if your clients connected to eth1 - 
+        you can skip this option in command line.
+      --ifbiface=<ifb_ifname> - name of creating ifb interface, in default is "ifb0". If you want up more that one 
+        ifb iface, you must manual specify name for second ifbiface.
+      
+      
+
+
+
+
+
+

@@ -1,0 +1,50 @@
+#
+# Name: Fantomas System Configurator for Debian Lenny Linux 
+# Version: 1.0
+# Copyright 2010 Coreit! group
+# Author: Andrey Makarov (pauk)
+# Email: admin@coreit.ru
+# Web: http://coreit.ru
+#
+#
+
+
+ What is this?
+ -------------
+ 
+      It's a console bash/awk script for preparing system configuration of Debian Lenny for installing
+    Fantomas Iptconf.
+
+
+
+ What's required for it work?
+ ----------------------------
+
+    - Debian Lenny installed standard system;
+    - Network configured and Internet access for quering online repo's;
+    
+ 
+ How to use it?
+ --------------
+
+    Just run like this: 
+
+	./debsysconf
+
+
+ Sintax:
+ -------
+ 
+    debsysconf [--mysqlpass=<value>] [--fixrepo]
+    
+    Options:
+      --mysqlpass=<value> - password that will be use as root password in MySQL server installing.
+      --fixrepo - fix file /etc/apt/sources.list: comment all uncommented lines and put config links for
+        Debian Lenny online repositories.
+      
+
+
+
+
+
+

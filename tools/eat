@@ -1,0 +1,61 @@
+#!/bin/bash
+
+if [ ! -z ]; then
+    echo "Mode is not specified"; exit
+fi
+
+if [ "$1" == "load" ]; then
+
+    if [ ! -f $2 ]; then 
+	echo "$2 is not file or is not found, exiting.."; exit
+    fi
+    output="$2-output"
+    optfile=$2
+    [ -f ./output ] && rm -f $output
+    while read line1; do
+	[ -z $line1 ] && continue
+	if [ $line[0]
+	ip=$(ping $line1 -n -c1 2</dev/null | grep 'PING' | awk '{ print substr($3,2,length($3)-2); }')
+	if [ ! -z $ip ]; then
+	    netname=$(whois $ip | grep 'netname:' | awk '{ gsub("netname:",""); print; }') 
+	    inetnum=$(whois $ip | grep 'inetnum:' | awk '{ gsub("inetnum:",""); print; }') 
+	    echo "getting: $line1 -> ip: $ip..."
+	    echo "ip: $ip" >> $output
+	    echo "url: $line1" >> $output
+	    echo "inetnum: $inetnum" >> $output
+	    echo "netname: $netname" >> $output 
+	    routes=$(whois $ip | grep 'route:' | awk '{print $2}')
+	    role=$(whois $ip | grep 'role:' | awk '{ gsub("role:",""); print; }') 
+	    echo "role: $role" >> $output
+	    echo "routes:" >> $output
+	    echo "$routes" >> $output
+	fi
+    
+    done <"$optfile"
+
+
+fi
+
+if [ "$1" == "save" ]; then
+
+    optfile=$2
+    
+    if [ ! -f $optfile ]; then
+	echo "A gde input??"; exit
+    fi
+    while read line2; do
+	[ -z "$line2" ] && continue
+	setname=$(echo $line2 | awk '{print $1}')
+	addr=$(echo $line2 | awk '{print $2}')
+	echo -n "processing: $addr -> $setname" 
+	chk=$(ipset -L $setname | grep $addr)
+	if [ -z $chk ]; then
+	    ipset -A $setname $addr 2>/dev/null
+	    echo " ...added"
+	else
+	    echo " ...exists"
+	fi
+    
+    done <"$optfile"
+
+fi

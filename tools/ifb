@@ -1,0 +1,316 @@
+#!/bin/bash
+#######
+# Name: ifb utility v1.0.1
+# Description: tool for manage network traffic shaping with iproute2/tc using ifb (and some sfq/tbf)"
+# Copyright 2009 Coreit! group
+# Author: Andrey Makarov (pauk)
+# Email: pauk1024@list.ru
+# Web: http://coreit.ru
+#######
+
+
+_tc=`which tc`
+_ip=`which ip`
+_modprobe=`which modprobe`
+_lsmod=`which lsmod`
+_grep=`which grep`
+_ifconfig=`which ifconfig`
+flcheckmod="0"
+intIF="eth1"
+ifbIF="ifb0"
+mode="" 
+addr="" 
+prefkeyin=""
+prefkeyout=""
+ratein=""
+rateout=""
+
+#-----------------------------------------------------------
+
+start() {
+    
+    if [ "$flcheckmod" == "1" ]; then
+	if [ -z "$($_lsmod | $_grep ifb | $_grep -v grep)" ]; then
+	    $_modprobe ifb
+	    if [ -z "$($_lsmod | $_grep ifb | $_grep -v grep)" ]; then
+		echo "Error loading module ifb - module not found"; exit
+	    fi
+	fi
+	if [ ! -z "$($_ifconfig | $_grep $ifbIF | $_grep -v grep)" ]; then
+	    echo "Iface $ifbIF allready exists... "
+	    exit
+	fi
+    fi
+    echo -n "Interface $ifbIF up ..."
+    $_ip link set $ifbIF up
+    if [ "$?" -eq "0" ]; then
+	echo "...ok"
+    else 
+	echo "...FAILED"
+    fi
+    echo -n "Loading conf ..."; rr="0"
+    $_tc qdisc add dev $ifbIF root handle 1: prio 
+    [ "$?" -ne "$rr" ] && rr=$?
+    $_tc qdisc add dev $ifbIF parent 1:1 handle 10: tbf rate 100mbit buffer 1600 limit 3000
+    [ "$?" -ne "$rr" ] && rr=$?
+    $_tc qdisc add dev $ifbIF parent 1:2 handle 20: sfq perturb 10
+    [ "$?" -ne "$rr" ] && rr=$?
+    $_tc qdisc add dev $intIF ingress
+    [ "$?" -ne "$rr" ] && rr=$?
+    $_tc qdisc add dev $intIF root handle 2: prio
+    [ "$?" -ne "$rr" ] && rr=$?
+    if [ "$rr" -eq "0" ]; then
+	echo "...ok"
+    else 
+	echo "...FAILED"
+    fi
+
+}
+
+#-----------------------------------------------------------
+
+stop() {
+    
+    if [ -z "$($_ifconfig | $_grep $ifbIF | $_grep -v grep)" ]; then
+	echo "Iface $ifbIF is not found... "
+	exit
+    fi
+    echo -n "Interface $ifbIF down ..."
+    $_tc qdisc del dev $intIF ingress
+    $_tc qdisc del dev $intIF root
+    $_tc qdisc del dev $ifbIF root
+    $_ip link set $ifbIF down
+    if [ "$?" -eq "0" ]; then
+	echo "...ok"
+    else 
+	echo "...FAILED"
+    fi
+
+}
+
+#-----------------------------------------------------------
+
+addr() {
+    
+    fl=0
+    [ -z $addr ] && fl=1
+    [ -z $intIF ] && fl=1
+    if [ "$fl" -eq "1" ]; then 
+	exit
+    fi
+    if [ "$mode" == "add" ]; then
+    	if [ ! -z $rateout ]; then
+	    $_tc filter add dev $intIF parent ffff: protocol ip prio $prefkeyout u32 \
+	    match ip src $addr flowid 1:2 \
+	    action police rate $rateout burst 90k drop \
+	    mirred egress mirror dev $ifbIF
+	    if [ "$?" -ne "0" ]; then
+		echo "ifb: ...tc has returned a sintax error, let's try other sintax... "
+		$_tc filter add dev $intIF parent ffff: protocol ip prio $prefkeyout u32 \
+		match ip src $addr flowid 1:2 \
+		action police rate $rateout burst 90k drop \
+		action mirred egress mirror dev $ifbIF
+		echo "ifb: ...code returned: $?"
+	    fi
+
+	fi
+	if [ ! -z $ratein ]; then
+	    $_tc filter add dev $intIF parent 2: protocol ip prio $prefkeyin u32 \
+	    match ip dst $addr flowid 1:2 \
+	    action police rate $ratein burst 90k drop \
+	    mirred egress mirror dev $ifbIF
+	    if [ "$?" -ne "0" ]; then
+		echo "ifb: ...tc has returned a sintax error, let's try other sintax... "
+		$_tc filter add dev $intIF parent 2: protocol ip prio $prefkeyin u32 \
+		match ip dst $addr flowid 1:2 \
+		action police rate $ratein burst 90k drop \
+		action mirred egress mirror dev $ifbIF
+		echo "ifb: ...code returned: $?"
+	    fi
+	fi
+    fi
+    if [ "$mode" == "del" ]; then
+	chck=$($_tc filter show parent 2: dev $intIF | $_grep "pref $prefkeyin")
+	if [ ! -z "$chck" ]; then
+	    $_tc filter del dev $intIF parent 2: pref $prefkeyin 
+	fi
+	chck=$($_tc filter show parent ffff: dev $intIF | $_grep "pref $prefkeyout")
+	if [ ! -z "$chck" ]; then
+	    $_tc filter del dev $intIF parent ffff: pref $prefkeyout 
+	fi
+    fi
+
+}
+#-----------------------------------------------------------
+
+check() {
+    
+    fl=0
+    [ -z $addr ] && fl=1
+    [ -z $intIF ] && fl=1
+    if [ "$fl" -eq "1" ]; then 
+	exit
+    fi
+    echo -n "Checking options for IP addr $addr on $intIF..."
+    chckin=$($_tc filter show parent 2: dev $intIF | $_grep "pref $prefkeyin")
+    chckout=$($_tc filter show parent ffff: dev $intIF | $_grep "pref $prefkeyout")
+    if [ ! -z "$chckin$chckout" ]; then
+	echo "...FILTERED"
+	echo "Directions:"
+	if [ ! -z "$chckin" ]; then
+	    echo "Ingress:"
+	    echo "$chckin"
+	fi
+	if [ ! -z "$chckout" ]; then
+	    echo "Egress:"
+	    echo "$chckout"
+	fi
+	echo " "
+	echo "To get more info:"
+	echo "for ingress - \"tc filter show parent 2: dev <ethX>\" "
+	echo "or for egress - \"tc filter show parent ffff: dev <ethX>\""
+    else 
+	echo "NOT FILTERED"
+    fi
+
+}
+#-----------------------------------------------------------
+show_about() {
+
+    echo "About: ifb utility v1.0.1 "
+    echo "Desc: tool for manage network traffic shaping with iproute2/tc using ifb (and some sfq/tbf)"
+
+}
+#-----------------------------------------------------------
+show_usage() {
+
+    echo "Usage: ifb <mode> --addr=<client_ip> [--iface=<ifname>] [--ratein=<value>] [--rateout=<value>] [--ifbiface=<ifb_ifname>]"
+
+}
+#-----------------------------------------------------------
+
+
+
+
+
+for arg in $*; do
+    [ -z "$arg" ] && continue
+    arg=${arg// /}; 
+    arg=${arg//--/};
+    arg1=$(echo ${arg// /} | awk '{print substr($0,0,index($0,"=")-1)}')
+    arg2=$(echo ${arg// /} | awk '{print substr($0,index($0,"=")+1)}')
+    [ -z $arg1 ] && arg1=$arg2
+    case $arg1 in 
+	mode)
+	    mode=$arg2
+	    ;;
+	start | stop | up | down | add | del | help | whoau | about)
+	    mode=$arg1
+	    ;;
+	check | verify)
+	    mode=$arg1
+	    ;;
+	iface | ifname)
+	    intIF=$arg2
+	    ;;
+	addr)
+	    addr=$arg2
+	    ;;
+	ratein)
+	    ratein=$arg2
+	    ;;
+	rateout)
+	    rateout=$arg2
+	    ;;
+	ifbiface | ifbifname)
+	    ifbIF=$arg2
+	    ;;
+    esac
+
+done
+
+if [ ! -z $addr ]; then
+
+    netb=$(echo $addr | awk '{ ii=index($0,"/"); if(ii==0) { print(""); } else { print(substr($0,ii+1));} }')
+    if [ -z $netb ]; then
+	netb="0"
+	ab=$addr
+    else
+	ab=$(echo $addr | awk '{print substr($0,0,index($0,"/")-1)}')
+    fi
+    for i in 1 2 3 4; do
+	w[$i]=$(echo $ab | awk -v i="$i" '{ split($0,a,"."); print( a[i]); }')
+    done
+    ifn=${intIF//eth/}
+    [ "$ifn" == "0" ] && ifn="94"
+    let prefkeyin=$netb+${w[1]}+${w[2]}+${w[3]}+${w[4]}+11
+    let prefkeyout=$netb+${w[1]}+${w[2]}+${w[3]}+${w[4]}+12
+fi
+
+
+if [ -z $_tc ]; then
+    echo "Error searching tc, try to specify location manually like _tc=\"/sbin/tc\" in script head section.."
+    exit
+fi
+if [ -z $_ip ]; then
+    echo "Error searching ip, try to specify location manually like _ip=\"/sbin/ip\" in script head section.."
+    exit
+fi
+
+
+
+case $mode in 
+    start | up)
+	start
+	;;
+    stop | down)
+	stop
+	;;
+    add | del)
+	addr
+	;;
+    check | verify)
+	check
+	;;
+    help)
+	show_about
+	echo " "
+	show_usage
+	echo " "
+	echo "Defaults:"
+	echo "    --iface=eth1"
+	echo "    --ifbiface=ifb0"
+	echo " "
+	echo "Modes: up|down|add|del|check"
+	echo " "
+	echo "Examples: "
+	echo "    up/down: "
+	echo " \"ifb up\" / \"ifb down\" "
+	echo "    or you may set ifbifname:"
+	echo " \"ifb up --ifbiface=ifb1\""
+	echo "   add: "
+	echo " \"ifb add --addr=192.168.0.112 --iface=eth0 --ratein=1800kbit --rateout=1mbit --ifbiface=ifb1\""
+	echo "   del: "
+	echo " \"ifb del --addr=192.168.0.112 --iface=eth0\""
+	echo "   check: "
+	echo " \"ifb check --addr=192.168.0.112 --iface=eth0\""
+	echo " "
+	exit
+	;;
+    about | whoau)
+	show_about
+	echo " "
+	show_usage
+	echo " "
+	exit
+	;;
+    *)
+	show_usage
+	echo " "
+	echo "to get more info use \"ifb help\" or \"ifb about\""
+	echo " "
+	exit
+	;;	
+esac
+
+exit 0

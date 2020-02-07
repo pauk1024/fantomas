@@ -1,0 +1,275 @@
+#!/bin/bash
+#######
+# Name: Fantomas System Configurator for Debian Lenny
+# Version: 1.1.2
+# Copyright 2010 Coreit! group
+# Author: Andrey Makarov /pauk/
+# Email: admin@coreit.ru, pauk1024@list.ru
+# Web: http://coreit.ru/fantomas/
+# 
+#######
+
+echo
+echo -e "\033[1;34mFantomas System Configurator for Debian Lenny Linux\033[0m"
+echo -e "\033[1;34mversion: 1.1\033[0m"
+echo "--------------------------------------------------"
+echo 
+#-----------------------------------------------------------------
+# Init zone
+
+rundir=$(pwd)
+
+chk[1]="aptitude"
+chk[2]="dpkg"
+chk[3]="awk"
+chk[4]="grep"
+chk[5]="tar"
+chk[6]="sysctl"
+
+for i in "${chk[@]}"
+do
+    which $i &>/dev/null
+    [ $? -eq 0 ] && echo "found $i..." || ( echo "Configurer can't found $i, exiting!" && exit 1 )
+done
+
+mysqlpass=
+fixrepo=0
+sysctl -w net.ipv4.ip_forward=1
+awk '{ 
+    if(($0~/net.ipv4.ip_forward/) && ($1~/^#/)) $0="net.ipv4.ip_forward=1";
+    print;
+    }' /etc/sysctl.conf > /etc/sysctl1.conf
+mv -f /etc/sysctl.conf /etc/sysctl.conf.original
+mv -f /etc/sysctl1.conf /etc/sysctl.conf
+
+if [ ! -f /etc/apt/sources.list ]
+then
+    fixrepo=1
+else
+    [ -z "$(awk '$0!~/^#/ && length($0)>0 && $0~/deb/&&/lenny/' /etc/apt/sources.list)" ] && fixrepo=1
+fi
+
+#-----------------------------------------------------------------
+# cmd arguments parsing zone
+
+for arg in $*
+do
+    arg=${arg// /}
+    [ -z "$arg" ] && continue
+    arg=${arg//--/}
+    arg1=`echo $arg | awk '{if($0~/=/) $0=substr($0,0,index($0,"=")); print;}'`
+    arg2=`echo $arg | awk '{$0=substr($0,index($0,"=")+1); print;}'`
+    if [ "$arg1" == "mysqlpass" ]; then
+	mysqlpass=$arg2
+    elif [ "$arg1" == "fixrepo" ]; then
+	fixrepo=2
+    else 
+	echo "# ./debsysconf [--mysqlpass=<password>] [--fixrepo]"
+	exit 0
+    fi
+done
+[ ! -z "$mysqlpass" ] && echo "Set to use mysql root password $mysqlpass"
+[ $fixrepo -ne 0 ] && echo "Set fixrepo mode on"
+echo 
+#-----------------------------------------------------------------
+
+
+if [ $fixrepo -ne 0 ]
+then
+    echo -e "\033[1mFix repo list in sources.list\033[0m"
+    ping -c 2 ftp.ru.debian.org &>/dev/null
+    if [ $? -ne 0 ]; then
+	echo "... FAILED"
+	exit 1
+    else 
+	[ -f /etc/apt/sourcez.list.cfg ] && mv /etc/apt/sourcez.list.cfg /etc/apt/sourcez.list.cfg.bak
+	awk '{ if($0!~/^#/) $0="#"$0; print;}' /etc/apt/sources.list > /etc/apt/sourcez.list.cfg
+	mv -f /etc/apt/sources.list /etc/apt/sources.list.original
+	mv -f /etc/apt/sourcez.list.cfg /etc/apt/sources.list
+	echo "" >> /etc/apt/sources.list
+	echo "deb http://ftp.ru.debian.org/debian/ lenny main non-free contrib" >> /etc/apt/sources.list
+	echo "deb-src http://ftp.ru.debian.org/debian/ lenny main non-free contrib" >> /etc/apt/sources.list
+	aptitude update
+	ret=$?
+	echo -en "\033[1mFix repo list in sources.list\033[0m"
+	[ $ret -eq 0 ] && echo -e "... \033[1;32mOK\033[0m" || echo "... \033[1;31mFAILED\033[0m"
+    fi
+    echo
+    [ $fixrepo -eq 2 ] && exit 0
+fi
+
+echo -e "\033[1mInstalling debconf-utils\033[0m"
+aptitude -y install debconf-utils 
+ret=$?
+echo -n "Installing debconf-utils               "
+[ $ret -eq 0 ] && echo -e "... \033[1;32mOK\033[0m" || ( echo "... \033[1;31mFAILED\033[0m" && exit 1 )
+echo 
+
+echo -e "\033[1mInstalling expect\033[0m"
+aptitude -y install expect
+ret=$?
+echo -n "Installing expect                      "
+[ $ret -eq 0 ] && echo -e "... \033[1;32mOK\033[0m" || ( echo "... \033[1;31mFAILED\033[0m" && exit 1 )
+echo 
+
+which debconf-set-selections &>/dev/null
+[ $? -ne 0 ] && ( echo "Debconf utilities is not found, exiting!" && exit 1 )
+
+if [ -z $mysqlpass ]; then
+    while [ 1 ]
+    do
+	echo -n "Enter password for root using at installing mysql-server: "; read answ
+	[ ! -z $answ ] && break
+    done
+    mysqlpass="$answ"
+fi
+echo "mysql-server-5.0 mysql-server/root_password select $mysqlpass" | debconf-set-selections
+[ $? -ne 0 ] && ( echo "Error setting debconf-set-selections for mysql root_password" && exit 1 )
+echo "mysql-server-5.0 mysql-server/root_password_again select $mysqlpass" | debconf-set-selections
+[ $? -ne 0 ] && ( echo "Error setting debconf-set-selections for mysql root_password_again" && exit 1 )
+
+
+echo -e "\033[1mInstalling mc\033[0m"
+aptitude -y install mc
+ret=$?
+echo -n "Installing mc                          "
+[ $ret -eq 0 ] && echo -e "... \033[1;32mOK\033[0m" || ( echo "... \033[1;31mFAILED\033[0m" && exit 1 )
+echo 
+
+echo -e "\033[1mInstalling openssh-server\033[0m"
+aptitude -y install openssh-server libssh2-1 libssh2-1-dev
+ret=$?
+echo -n "Installing openssh-server              "
+[ $ret -eq 0 ] && echo -e "... \033[1;32mOK\033[0m" || ( echo "... \033[1;31mFAILED\033[0m" && exit 1 )
+echo 
+
+echo -e "\033[1mInstalling chkconfig\033[0m"
+aptitude -y install chkconfig
+ret=$?
+echo -n "Installing chkconfig                   "
+[ $ret -eq 0 ] && echo -e "... \033[1;32mOK\033[0m" || ( echo "... \033[1;31mFAILED\033[0m" && exit 1 )
+echo 
+
+echo -e "\033[1mInstalling make\033[0m"
+echo "---------------------------------------"
+aptitude -y install make
+ret=$?
+echo -n "Installing make                        "
+[ $ret -eq 0 ] && echo -e "... \033[1;32mOK\033[0m" || ( echo "... \033[1;31mFAILED\033[0m" && exit 1 )
+echo 
+
+echo -e "\033[1mInstalling ipset\033[0m"
+aptitude -y install ipset
+ret=$?
+echo -n "Installing ipset                       "
+[ $ret -eq 0 ] && echo -e "... \033[1;32mOK\033[0m" || ( echo "... \033[1;31mFAILED\033[0m" && exit 1 )
+echo 
+
+echo -e "\033[1mDownloading netfilter-extensions\033[0m"
+aptitude -y install netfilter-extensions-source
+ret=$?
+echo -n "Downloading netfilter-extensions       "
+[ $ret -eq 0 ] && echo -e "... \033[1;32mOK\033[0m" || ( echo "... \033[1;31mFAILED\033[0m" && exit 1 )
+echo
+echo -e "\033[1mExtracting netfilter-extensions\033[0m"
+cd /usr/src
+tar -xjf netfilter-extensions.tar.bz2
+ret=$?
+echo -n "Extracting netfilter-extensions        "
+[ $ret -eq 0 ] && echo -e "... \033[1;32mOK\033[0m" || ( echo "... \033[1;31mFAILED\033[0m" && exit 1 )
+echo
+echo -e "\033[1mInstalling netfilter-extensions\033[0m"
+m-a a-i -i -f netfilter-extensions
+ret=$?
+echo -n "Installing netfilter-extensions        "
+[ $ret -eq 0 ] && echo -e "... \033[1;32mOK\033[0m" || ( echo "... \033[1;32Done\033[0m (exit:$ret)" )
+echo
+
+echo -e "\033[1mInstalling mysql\033[0m"
+aptitude -y install mysql-server
+ret=$?
+echo -n "Installing mysql                       "
+[ $ret -eq 0 ] && echo -e "... \033[1;32mOK\033[0m" || ( echo "... \033[1;31mFAILED\033[0m" && exit 1 )
+echo 
+
+echo -e "\033[1mInstalling ulogd\033[0m"
+aptitude -y install ulogd ulogd-mysql
+ret=$?
+echo -n "Installing ulogd                       "
+[ $ret -eq 0 ] && echo -e "... \033[1;32mOK\033[0m" || ( echo "... \033[1;31mFAILED\033[0m" && exit 1 )
+echo 
+echo -e "\033[1mConfiguring ulogd\033[0m"
+[ ! -f "/usr/share/doc/ulogd-mysql/mysql.table" ] && ( echo "Not found ulogd mysql.table file!" && exit 1 )
+echo "DROP DATABASE IF EXISTS ulogd;" > $rundir/mysqlf.table
+echo "CREATE DATABASE ulogd;" > $rundir/mysqlf.table
+echo "use ulogd;" >> $rundir/mysqlf.table
+cat /usr/share/doc/ulogd-mysql/mysql.table >> $rundir/mysqlf.table
+echo 'ALTER TABLE ulog ADD INDEX (`oob_time_sec`), ADD INDEX (`ip_saddr`), ADD INDEX (`ip_daddr`);' >>  $rundir/mysqlf.table
+which mysql &>/dev/null
+[ $? -ne 0 ] && ( echo "MySQL binary is not found, exiting!" && exit 1 )
+mysql -u root -p$mysqlpass < $rundir/mysqlf.table
+awk -v pass="$mysqlpass" 'BEGIN { sect=0; } 
+    { if($0~/plugin=/&&/ulogd_LOGEMU.so/) $0="#"$0;
+      if(($0~/plugin=/&&/ulogd_MYSQL.so/) && ($1~/^#/)) $0=substr($0,2);
+      if($0~/\[MYSQL\]/) {
+        sect=1;
+        print("[MYSQL]");
+        print("table=\"ulog\"");
+        print("pass=\""pass"\"");
+        print("user=\"root\"");
+        print("db=\"ulogd\"");
+        print("host=\"localhost\"\n");
+      }
+      if($0~/\[PGSQL\]/) sect=0;
+      if(sect==0) print;
+    }' /etc/ulogd.conf > /etc/ulogd1.conf
+mv -f /etc/ulogd.conf /etc/ulogd.conf.original
+mv -f /etc/ulogd1.conf /etc/ulogd.conf
+service ulogd restart
+ret=$?
+echo -n "Configuring ulogd                      "
+[ $ret -eq 0 ] && echo -e "... \033[1;32mOK\033[0m" || echo "... \033[1;32Done\033[0m (exit:$ret)"
+
+echo -e "\033[1mInstalling apache2\033[0m"
+aptitude -y install apache2
+ret=$?
+echo -n "Installing apache2                     "
+[ $ret -eq 0 ] && echo -e "... \033[1;32mOK\033[0m" || ( echo "... \033[1;31mFAILED\033[0m" && exit 1 )
+echo 
+
+echo -e "\033[1mInstalling php5\033[0m"
+aptitude -y install php5 php5-dev php5-mysql php-pear
+ret=$?
+echo -n "Installing php5                        "
+[ $ret -eq 0 ] && echo -e "... \033[1;32mOK\033[0m" || echo "... \033[1;32Done\033[0m (exit:$ret)"
+echo 
+echo -e "\033[1mInstalling php5 pecl/ssh2\033[0m"
+which pecl &>/dev/null
+[ $? -ne 0 ] && ( echo "php pecl is not found, exiting!" && exit 1 )
+ssh2_vers=`pecl remote-info ssh2 | awk '$1~/Latest/ {print $2;}'`
+[ -z "$ssh2_vers" ] && ( echo "php pecl/ssh2 can't get latest version, exiting!" && exit 1 )
+pecl -q install ssh2 channel://pecl.php.net/ssh2-$ssh2_vers | expect -c expect "[confirm]" { send "\r" } 
+ret=$?
+echo "extension=ssh2.so" >> /etc/php5/apache2/php.ini
+echo -n "Installing php5 pecl/ssh2              "
+[ $ret -eq 0 ] && echo -e "... \033[1;32mOK\033[0m" || echo "... \033[1;32Done\033[0m (exit:$ret)"
+echo
+
+echo -e "\033[1mInstalling sudo\033[0m"
+aptitude -y install sudo
+ret=$?
+echo -n "Installing sudo                        "
+[ $ret -eq 0 ] && echo -e "... \033[1;32mOK\033[0m" || ( echo "... \033[1;31mFAILED\033[0m" && exit 1 )
+echo 
+
+echo -e "\033[1mInstalling nmap\033[0m"
+aptitude -y install nmap   
+ret=$?
+echo -n "Installing nmap                        "
+[ $ret -eq 0 ] && echo -e "... \033[1;32mOK\033[0m" || ( echo "... \033[1;31mFAILED\033[0m" && exit 1 )
+echo 
+
+
+
+
+exit 0

@@ -1,0 +1,373 @@
+#!/bin/bash
+#
+# tabloid      Fantomas Iptconf:Tabloid 
+# description: Tabloid is the console tool for easy load/unload iproute2 rulesets 
+# version:     1.2
+# author:      Andrey Makarov (pauk)
+# Copyright:   2009 Coreit! group
+#
+#---------------------------------------------
+
+getValue() {
+
+    [ -z "$1" ] && return ""
+    REPLY=$(cat $_iptconf_dir"/config.php" | awk -v opt="$1" 'BEGIN { FS="="; conf=0; } {
+    	gsub(/^\$/,""); gsub(/[ \t]/,"");
+    	if( $0=="###Configzone") { conf=1; next; }
+    	if( $0=="#########Endofconfigzone") { conf=0; next; }
+	if( conf==1) { 
+    	    if( $1==opt) {
+    		gsub(/^\"|\";$|;$/,"",$2);
+    		print($2); 
+    		exit;
+    	    }
+    	}
+    }');
+}
+
+
+#---------------------------------------------
+# defaults options definition section
+#
+_modprobe="/sbin/modprobe"; [ ! -f $_modprobe ] && _modprobe=`which modprobe`
+_iptconf_dir="/usr/local/fantomas"
+
+RETVAL=0
+
+#--------------------------------------------
+# init checks section
+#
+
+if [ ! -d $_iptconf_dir ]; then echo -n $"Fantomas directory is not found!"; failure; echo
+    exit 1
+fi
+if [ ! -f $_iptconf_dir"/config.php" ]; then
+    echo $"Fantomas configuration file config.php is not found!"; warning; echo
+    exit 1
+fi
+if [ ! -x `which awk` ]; then
+    echo -n $"AWK does not found!"; failure; echo
+    exit 1
+fi
+
+
+#--------------------------------------------
+# Source function library.
+. $_iptconf_dir/tools/functions
+#
+
+#--------------------------------------------
+# loading config
+
+getValue "iproutabled"; _iproutabled=$REPLY
+getValue "iproute_init"; iproute_init=$REPLY
+getValue "_ip"; _ip=$REPLY
+
+if [ ! -x $_ip ]; then
+    echo -n $"IP does not found!"; failure; echo
+    exit 1
+fi
+
+if [ !$_iproutabled ]; then 
+    echo "Iproutabled!"
+    echo "iproute_init .$iproute_init."
+else
+    echo "Iproute2 support is disabled."; exit 0
+fi
+echo
+
+
+
+#--------------------------------------------
+cleanrules() {
+    [ $silent -eq 0 ] && echo -n $"Cleaning routing rule list..."
+    flag=
+    rr=0
+    while read line; do
+	[ -z ${line// /} ] && continue
+	word=`echo $line | awk '{ if( $1 ~ /^###|^#########/) print($1$2); }'`
+	if [ "$word" == "###rules" ]; then
+	    flag=1; continue
+	elif [ "$word" == "#########end" ]; then
+	    flag=; continue
+	fi
+	if [ ! -z $flag ]; then
+	    line=`echo $line | awk '{ gsub("add","del"); print; }'`
+	    [ "$(echo $line | awk '{ print($1); }')" == "ip" ] && line=${line//ip /}
+	    line="$_ip $line"
+	    $line
+	    rr=$?
+	    if [ $silent -eq 0 ]&&[ $rr -ne 0 ]; then 
+		echo -n $"Error running command at line $str of $iproute_init!"; warning; echo
+		echo '---------------'
+		echo $line
+		echo '---------------'
+	    fi
+	fi
+    done < $iproute_init
+    if [ $silent -eq 0 ]; then 
+	[ $rr -eq 0 ] && success || failure; echo
+    fi
+    return $rr
+}
+#--------------------------------------------
+down() {
+
+    if [ ! -z $1 ]; then
+	tablo=$1
+    else 
+	tablo=
+    fi
+    RET=0
+    if [ ! -z $tablo ]; then
+	if [ "$tablo" != "rules" ] && [ "$tablo" != "at_atartup" ]; then
+	    [ $silent -eq 0 ] && echo -n "Flushing routing table $tablo..."
+	    $_ip route flush table $tablo
+	    RET=$?
+	    if [ $silent -eq 0 ]; then
+		[ $RET -eq 0 ] && success || failure; echo
+	    fi
+	else 
+	    [ "$tablo" == "rules" ] && cleanrules
+	fi
+	return 0
+    else 
+	ontable=
+	rr=0
+	while read line; do
+	    [ -z "${line// /}" ] && continue
+	    if [ "${line:0:1}" == "#" ]; then
+		word=`echo $line | awk '{ if( $1 ~ /^###|^#########/) print($1$2); }'`
+		if [ "$word" == "###table" ]; then
+		    ontable=`echo $line | awk '{print($3);}'`
+		    [ -z $ontable ] && ontable="unknown";
+		    chk=`$_ip route list table $ontable`
+
+		    if [ $? -ne 0 ]; then
+			if [ $silent -eq 0 ]; then
+			    echo -n $"Error quering table $ontable, possible is not exists..."; failure; echo
+			fi
+			ontable=""; continue
+		    fi
+		
+		    [ $silent -eq 0 ] && echo -n "Flushing routing table $ontable..."
+		    $_ip route flush table $ontable
+		    rr=$? 
+		    if [ $silent -eq 0 ]; then
+			[ $rr -eq 0 ] && success || failure; echo
+		    fi
+		    ontable=
+		    [ $silent -eq 0 ] && echo 
+		    continue
+		    
+		elif [ "$word" == "###rules" ]; then
+		    if [ -z $tablo ]; then
+			ontable="rules"
+			cleanrules
+			rr=$?
+			ontable=
+			
+		    else
+			ontable=
+		    fi
+		    [ $silent -eq 0 ] && echo
+		    continue
+		elif [ "$word" == "###at_startup" ]; then
+		    ontable=
+		    continue
+		
+		elif [ "$word" == "###at_down" ]; then
+		    ontable="at_down"
+		    if [ ! -z $tablo ]; then
+			ontable=
+			continue
+		    else
+			[ $silent -eq 0 ] && echo -n "Running at_down command list..."
+		    fi
+		
+		elif [ "$word" == "#########end" ]; then
+
+		    if [ ! -z ${ontable// /} ]; then
+			if [ $silent -eq 0 ]; then
+			    [ $rr -eq 0 ] && success || failure; echo
+			    echo 
+			fi
+			ontable=
+		    fi
+		fi
+		continue
+	    fi
+	    
+	    [ -z $ontable ] && continue
+	    
+	    [ "$(echo $line | awk '{ print($1); }')" == "ip" ] && line=${line//ip /}
+	    line="$_ip $line"
+	    $line
+	    rr=$?
+	    if [ $rr -ne 0 ]&&[ $silent -eq 0 ]; then 
+		echo -n $"Error running command at line $str of $iproute_init!"; warning; echo
+		echo '---------------'
+		echo $line
+		echo '---------------'
+	    fi
+	done <$iproute_init
+    fi
+    [ $silent -eq 0 ] && echo
+    return $rr
+}
+#--------------------------------------------
+up() {
+    [ ! -z $1 ] && tablo=$1||tablo=""
+
+    str=0; rr=0
+    while read line; do
+	let str=$str+1
+	[ "${line// /}" == "" ] && continue
+	if [ "${line:0:1}" == "#" ]; then
+	    word=`echo $line | awk '{ if( $1 ~ /^###|^#########/) print($1$2); }'`
+	    if [ "$word" == "###table" ]; then
+		ontable=`echo $line | awk '{print($3);}'`
+		[ -z $ontable ] && ontable="unknown";
+		chk=`$_ip route list table $ontable`
+		if [ $? -ne 0 ]; then
+		    echo -n $"Error quering table $ontable, possible is not exists..."; failure; echo
+		    ontable=""; continue
+		fi
+
+		if [ ! -z "$tablo" ]; then
+		    if [ "$ontable" == "$tablo" ]; then
+			echo -n "Loading routing table $ontable..."
+			if [ ! -z "$chk" ]; then
+			    down $ontable
+			fi
+		    fi
+		    
+		else
+		    echo -n "Loading routing table $ontable..."
+		    if [ ! -z "$chk" ]; then
+			down $ontable
+		    fi
+
+		fi
+		let state_load=$state_load+1
+	    elif [ "$word" == "###rules" ]; then
+		if [ $state_load -eq 0 ]; then
+		    ontable=""; continue
+		fi
+		ontable="rules"
+		if [ ! -z "$tablo" ]; then
+		    if [ "$ontable" == "$tablo" ]; then
+			echo -n "Loading routing rules..."
+		    fi
+		else
+		    echo -n "Loading routing rules..."
+		fi
+ 
+	    elif [ "$word" == "###at_startup" ]; then
+		ontable="at_startup"
+		if [ ! -z "$tablo" ]; then
+		    ontable=""; continue
+		else
+		    echo -n "Loading startup rule list..."
+		fi
+		
+	    elif [ "$word" == "###at_down" ]; then
+		ontable=
+		continue
+
+	    elif [ "$word" == "#########end" ]; then
+
+		[ -z $ontable ] && continue
+		if [ ! -z "$tablo" ]; then
+		    if [ "$ontable" == "$tablo" ]; then 
+			[ $rr -eq 0 ] && success || failure; echo
+			echo
+		    fi
+		else
+		    [ $rr -eq 0 ] && success || failure; echo
+		    echo
+		fi
+		ontable=
+	    fi
+	    continue
+	fi
+
+	[ -z $ontable ] && continue
+	[ ! -z $tablo ] && [ "$tablo" != "$ontable" ] && continue
+
+	[ "$(echo $line | awk '{ print($1); }')" == "ip" ] && line=${line//ip /}
+	line="$_ip $line"
+	$line
+	rr=$?
+	if [ $rr -ne 0 ]; then 
+	    echo -n -e $"Error running command at line $str!"; warning; echo
+	    echo '---------------'
+	    echo $line
+	    echo '---------------'
+	fi
+    done <$iproute_init
+    return $rr
+}
+
+#--------------------------------------------
+
+
+tablo=
+
+for arg in $*; do
+    arg=${arg// /}
+    [ -z "$arg" ] && continue
+    arg=${arg//--/}
+    arg1=`echo $arg | awk 'BEGIN {FS="=";} {print($1);}'`
+    arg2=`echo $arg | awk 'BEGIN {FS="=";} {print($2);}'`
+    [ -z $arg1 ] && arg1=$arg2
+    case $arg1 in
+	start | stop | up | down | reload | restart)
+	    mode=$arg1
+	    ;;
+	mode)
+	    mode=$arg2
+	    ;;
+	target | table | rtb)
+	    tablo=$arg2
+	    ;;
+    esac
+done
+
+if [ ! -z $tablo ]; then
+    if [ -z "$(cat $iproute_init | grep $tablo)" ]; then
+	echo -n $"Routing table $tablo is not found in config"; failure; echo
+	exit 1
+    fi
+fi
+
+state_load=0
+silent=0
+
+case $mode in
+    start | up)
+	up $tablo
+	RETVAL=$?
+	;;
+    stop | down)
+	down $tablo
+	RETVAL=$?
+	;;
+    reload | restart)
+	silent=1
+	down $tablo
+	RETVAL=$?
+	echo 
+	up $tablo
+	RETVAL=$?
+	;;
+    *)
+	echo "Fantomas Iptconf: Tabloid - console tool for load/unload iproute2 config"
+	echo "Version 2.8"
+	echo 
+	echo "Usage: $0 {up|down|reload} [target=<tablename>]"
+	exit 0
+	;;
+esac
+
+exit $RETVAL

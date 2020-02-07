@@ -1,0 +1,80 @@
+policy default_with_bl {
+title "Политика по умолчанию с bl (default_with_bl)"
+accept icmp
+accept tcp (!25,8080,3128)
+action masquerade
+out
+count
+blacklist bl_aim
+}
+
+policy free {
+title "Свободный доступ (free)"
+accept icmp
+accept tcp !25
+accept udp
+manglemark 3
+action masquerade
+out
+}
+
+policy out_mail_ru {
+title "mail.ru out"
+accept tcp (25,110,80,443) to mail.mail.ru
+accept tcp (25,110,80,443) to win.mail.ru
+accept tcp (25,110,80,443) to mail.ru
+out
+action masquerade
+manglemark 4
+count
+}
+
+policy out_mail_yandex_ru {
+title "mail.yandex.ru out"
+accept tcp (25,110,80,443) to mail.yandex.ru
+out
+manglemark 5
+action masquerade
+count
+}
+
+policy pop3_out {
+title "pop3 out"
+accept tcp 110
+in afina
+action masquerade
+count
+}
+
+policy default {
+title "Политика по умолчанию (default)"
+accept icmp
+accept tcp (!25,8080,3128)
+accept udp
+action masquerade
+blacklist videos
+blacklist bl_aim
+out
+count
+}
+
+policy default_with_aim_allowed {
+title "Политика по умолчанию c aim"
+accept icmp
+accept tcp (!25,8080,3128)
+accept udp
+action masquerade
+blacklist videos
+out
+count
+}
+
+policy smtp_out {
+title "smtp out policy"
+accept tcp 25
+manglemark 9
+action masquerade
+out
+count
+}
+

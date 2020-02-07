@@ -1,0 +1,103 @@
+DROP DATABASE IF EXISTS fantomas;
+CREATE DATABASE fantomas;
+
+USE fantomas;
+ALTER DATABASE `fantomas` DEFAULT CHARACTER SET koi8r COLLATE koi8r_general_ci;
+
+DROP TABLE IF EXISTS `fantomas`;
+CREATE TABLE `fantomas` (
+    `p_start_date` timestamp
+);
+ALTER TABLE `fantomas` DEFAULT CHARACTER SET koi8r COLLATE koi8r_general_ci;
+
+DROP TABLE IF EXISTS `users`;
+CREATE TABLE `users` (
+    `username` char(30),
+    `userpass` char(100),
+    `description` char(100),
+    `isadmin` int(1),
+    `islocked` int(1),
+    `v` int(1)
+);
+ALTER TABLE `users`  DEFAULT CHARACTER SET koi8r COLLATE koi8r_general_ci;
+
+DROP TABLE IF EXISTS `groups`;
+CREATE TABLE `groups` (	
+    `id` bigint(14),
+    `name` varchar(100),
+    `title` varchar(100),
+    `default_policy` varchar(100)
+);
+ALTER TABLE `groups`  DEFAULT CHARACTER SET koi8r COLLATE koi8r_general_ci;
+
+ALTER TABLE `groups` ADD PRIMARY KEY ( `id` );
+ALTER TABLE `groups` ADD UNIQUE ( `name` );
+
+DROP TABLE IF EXISTS `clients`;
+CREATE TABLE `clients` (
+    `group_id` bigint(14),
+    `ip` char(15),
+    `policies` text,
+    `cname` varchar(100),
+    `islocked` int(1)
+);
+ALTER TABLE `clients`  DEFAULT CHARACTER SET koi8r COLLATE koi8r_general_ci;
+
+ALTER TABLE `clients` ADD UNIQUE ( `ip` );
+
+ALTER TABLE `clients` ADD INDEX ( `islocked` );
+
+DROP TABLE IF EXISTS `policies`;
+CREATE TABLE `policies` (
+    `id` bigint(14),
+    `name` varchar(100),
+    `policy_hash` char(32),
+    `policy` text
+);
+ALTER TABLE `policies`  DEFAULT CHARACTER SET koi8r COLLATE koi8r_general_ci;
+
+ALTER TABLE `policies` ADD PRIMARY KEY ( `id` ) ;
+ALTER TABLE `policies` ADD UNIQUE ( `name` );
+
+DROP TABLE IF EXISTS `pol_rulesets`;
+CREATE TABLE `pol_rulesets` (
+    `policy_id` bigint(14),
+    `policy_hash` char(32),
+    `line_hash` char(32),
+    `line` text
+);
+ALTER TABLE `pol_rulesets`  DEFAULT CHARACTER SET koi8r COLLATE koi8r_general_ci;
+
+ALTER TABLE `pol_rulesets` ADD UNIQUE ( `line_hash` );
+
+DROP TABLE IF EXISTS `providers`;
+CREATE TABLE `providers` (
+    `name` char(100),
+    `local` int(1),
+    `ip` char(15),
+    `ifname` char(10)
+);
+ALTER TABLE `providers`  DEFAULT CHARACTER SET koi8r COLLATE koi8r_general_ci;
+
+ALTER TABLE `providers` ADD PRIMARY KEY ( `name` );
+
+DROP TABLE IF EXISTS `networks`;
+CREATE TABLE `networks` (
+    `addr` char(19),
+    `local` int(1),
+    `notallfwd` int(1)
+);
+ALTER TABLE `networks`  DEFAULT CHARACTER SET koi8r COLLATE koi8r_general_ci;
+
+ALTER TABLE `networks` ADD PRIMARY KEY ( `addr` );
+
+DROP TABLE IF EXISTS `services`;
+CREATE TABLE `services` (
+    `servicename` VARCHAR( 100 ) NOT NULL ,
+    `config_path` TEXT NOT NULL ,
+    `log_path` TEXT NOT NULL
+);
+ALTER TABLE `services`  DEFAULT CHARACTER SET koi8r COLLATE koi8r_general_ci;
+
+ALTER TABLE `services` ADD PRIMARY KEY ( `servicename` );
+

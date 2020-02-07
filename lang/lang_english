@@ -1,0 +1,37 @@
+lframe_userstraffic|&nbsp&#47Clients&nbspand&nbspTraffic
+lframe_monitor|&nbsp&#47Monitor
+lframe_reports|&nbsp&#47Reports
+lframe_groups|&nbsp&#47By groups
+lframe_groups|&nbsp&#47By networks
+lframe_shaper|&nbsp&#47Traffic shaper
+lframe_system|&nbsp&#47System
+lframe_iptables|&nbsp<i>Iptables</i>
+lframe_ulog|&nbsp<i>ULOG</i>
+lframe_iproute|&nbsp<i>Iproute2</i>
+lframe_mysql|&nbsp<i>MySQL</i>
+lframe_crond|&nbsp<i>Crond</i>
+lframe_fantomaslogs|&nbsp<i>Fantomas Log</i>
+lframe_options|&nbsp&#47Options
+lframe_policies|&nbsp&#47Policies
+lframe_policies_pollist|&nbsp<i>Browse full list</i>\
+lframe_policies_new|&nbsp<i>Create new</i>\
+lframe_inits|&nbsp<i>Inits</i>
+lframe_ipset|&nbsp&#47Ipset
+lframe_ipset_panel|&nbsp<i>Set-panel</i>
+lframe_ipset_editor|&nbsp<i>Editor</i>
+lframe_networks|&nbsp<i>Networks</i>
+lframe_links|&nbsp<i>Links</i>
+lframe_ports|&nbsp<i>Port-filter</i>
+lframe_settings|&nbsp&#47Settings
+lframe_settings_paths|&nbsp<i>Paths</i>
+lframe_settings_pathdir|&nbsp<i>Dir paths</i>
+lframe_settings_pathbin|&nbsp<i>Binaries paths</i>
+lframe_settings_pathinit|&nbsp<i>Other paths</i>
+lframe_settings_iface|&nbsp<i>Interface</i>
+lframe_settings_system|&nbsp<i>System</i>
+lframe_fusers|&nbsp<i>Web users</i>
+lframe_help|&nbsp<i>Help</i>
+lframe_logout|&nbsp&#47Logout
+lframe_loginname|login:
+lframe_php|&nbsp<i>PHP</i>
+lframe_natmon|&nbsp&#47NAT Monitor

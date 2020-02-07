@@ -1,0 +1,142 @@
+#!/bin/bash
+
+tnmap="/usr/bin/nmap"
+tusr="../usr/_usr_default"
+tprov="../providers"
+
+# ---------------------------------------------------------------------
+
+if [ ! -z $1 ]; then
+    if [ -z $( echo "$1" | awk '{print substr($0,0,index($0,"=")-1)}') ]; then
+	echo "Invalid entry $1"
+	echo "Usage: "; echo "./sbnetscan [nmap=/full/path-to/nmap] [usr=/full/path-to/_usr_file] [prov=/full/path-to/providers-file]"
+	exit
+    fi
+    name=$(echo "$1" | awk '{print substr($0,0,index($0,"=")-1)}')
+    vvar=$(echo "$1" | awk '{ print substr($0,index($0,"=")+1,length) }')
+    case "$name" in 
+	"nmap")
+	    tnmap=$vvar
+	    if [ ! -f $vvar ]; then
+		echo "Not found file an entry $vvar"; exit
+	    fi
+	    ;;
+	"prov")
+	    tprov=$vvar
+	    if [ ! -f $vvar ]; then
+		echo "Not found file an entry $vvar"; exit
+	    fi
+	    ;;
+	"usr")
+	    tusr=$vvar
+	    ;;
+	*)
+	    echo "Invalid entry $1"
+	    echo "Usage: "; echo "./sbnetscan [nmap=/full/path-to/nmap] [usr=/full/path-to/_usr_file] [prov=/full/path-to/providers-file]"
+	    exit
+    esac
+fi
+
+if [ ! -z $2 ]; then
+    if [ -z $( echo "$2" | awk '{print substr($0,0,index($0,"=")-1)}') ]; then
+	echo "Invalid entry $2"
+	echo "Usage: "; echo "./sbnetscan [nmap=/full/path-to/nmap] [usr=/full/path-to/_usr_file] [prov=/full/path-to/providers-file]"
+	exit
+    fi
+    name=$(echo "$2" | awk '{print substr($0,0,index($0,"=")-1)}')
+    vvar=$(echo "$2" | awk '{ print substr($0,index($0,"=")+1,length) }')
+    case "$name" in 
+	"nmap")
+	    tnmap=$vvar
+	    if [ ! -f $vvar ]; then
+		echo "Not found file an entry $vvar"; exit
+	    fi
+	    ;;
+	"prov")
+	    tprov=$vvar
+	    if [ ! -f $vvar ]; then
+		echo "Not found file an entry $vvar"; exit
+	    fi
+	    ;;
+	"usr")
+	    tusr=$vvar
+	    ;;
+	*)
+	    echo "Invalid entry $2"
+	    echo "Usage: "; echo "./sbnetscan [nmap=/full/path-to/nmap] [usr=/full/path-to/_usr_file] [prov=/full/path-to/providers-file]"
+	    exit
+    esac
+fi
+
+
+# --------------------------------------------------------------------
+if [ ! -f $tprov ]; then
+    echo "Providers file is not found..."; exit
+fi
+
+if [ ! -f $tnmap ]; then
+    tnmap=`nmap | grep Nmap | awk 'NR==1 { print $1 }'`
+    if [ "$tnmap" != "Nmap" ]; then
+	while [ 1 ]; do
+	    echo -n "Nmap is not found, can you manual specify path to them? ( Y/N ): "; read answ_nmap
+	    echo " "
+	    case "$answ_nmap" in
+	    "Y" | "y")
+		echo -n "Input path to Nmap: "; read nmap_path
+	        break
+		;;
+	    "N" | "n")
+		nmap_path=""
+	        break
+		;;
+	    esac
+	done
+	[ ! -f $nmap_path ] && tnmap=""
+    else 
+	tnmap="nmap"
+    fi
+fi
+
+# ----------------------------------------------------------------
+
+if [ ! -z $tnmap ]; then
+    while [ 1 ]; do
+	echo " "
+	echo -n "Input subnet to scan (like 192.168.0.0/24) : "; read tsubnet
+	tstnet=$(echo $tsubnet | awk '{ split($0,aa,"."); for(i in aa) { nn++ } print(nn) }')
+	if [ "$tstnet" != "4" ]; then
+	    echo " "
+	    echo "Invalid entry..."
+	    echo " " 
+	else 
+	    break
+	fi
+    done
+    echo " "
+    echo "Scanning... "
+    provs=$(echo $(cat $tprov | awk 'BEGIN {FS="="} $0~/ipaddr/ {print $2}'))
+    if [ -f $tusr ]; then
+	slist=$(echo $(cat $tusr))
+	list=$($tnmap -sP $tsubnet -n | grep Host | awk -v slist="$slist" '{split(slist,aa); nn=0; 
+	    for(i in aa) { if(aa[i]==$2) {nn++} } 
+	    if(nn==0) print($2) 
+	    }')
+	list=$(echo "$list" | awk -v provs="$provs" '{split(provs,aa); nn=0; 
+	for(i in aa) {if(aa[i]==$1) {nn++}}
+	if(nn==0) print($1)}')
+	echo "$list" | awk 'END {print(NR" new ip found:")}'
+	echo "$list" 
+    else 
+	list=$($tnmap -sP $tsubnet -n | grep Host | awk '{print($2)}')
+	list=$(echo "$list" | awk -v provs="$provs" '{split(provs,aa); nn=0; 
+	for(i in aa) {if(aa[i]==$1) {nn++}}
+	if(nn==0) print($1)}')
+	echo "$list" | awk 'END {print(NR" new ip found:")}'
+	echo "$list" 
+    fi
+    echo "$list" >>$tusr
+    echo " "
+    echo "...finished "
+fi
+
+exit 0

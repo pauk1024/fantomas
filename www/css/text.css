@@ -1,0 +1,62 @@
+BODY    {
+    FONT: 10px sans-serif;
+    BORDER: 0;
+	BORDER-LEFT: 1px inset;
+	BORDER-RIGHT: 1px inset;
+    background-color-COLOR: white;
+}
+A	{
+	text-decoration: none;
+	color: black;
+}
+.editable {
+	color: black;
+}
+.editable .selected {
+	background-color-color: #333399;
+	color: white;
+}
+.fixed {
+	color: #999999;
+}
+.fixed .selected {
+	color: #CCCCCC;
+	background-color-color: #333399;
+}
+.invisible {
+	font-style: italic;
+}
+IMG.icon {
+	padding: 0px;
+	border: 0px;
+	margin: 0px;
+	margin-left: -3px;
+	margin-right: 3px;
+}
+IMG.flag {
+	margin-top: 5px;
+}
+
+.packets1 { font-size:11px; font-style: italic}
+
+.top1 { font-family: Arial; font-size: 12pt; font-weight: bold; color:330066}
+
+.text01 { font-family: Tahoma; font-size: 8px; font-weight: normal }
+.text1 { font-family: Tahoma; font-size: 8pt; font-weight: normal }
+.text2 { font-family: Tahoma; font-size: 9pt; font-weight: normal }
+.text3 { font-family: Arial; font-size: 12px; font-weight: normal; color:696969}
+
+TABLE.table1 { background-color:white; align:center; width:auto; border:0; }
+TABLE.table1 TH { background-color:FAEBD7; width:auto; height:40px; FONT: 13px; }
+TABLE.table1 TD { background-color:FFFBF0;  width:auto; FONT: 12px; color:696969; valign:right; }
+TABLE.table1 .td1 { background-color:FFF8DC;  width:auto; FONT: 12px; color:696969; valign:right; }
+TABLE.table1 .td2 { background-color:FFFFFF;  width:auto; FONT: 12px; color:696969; valign:right; }
+
+TABLE.table2 { background-color:white; align:center; width:auto; border:0; }
+TABLE.table2 TH { background-color:FFF5EE; width:auto; height:30px; FONT: 12px; font-weight: bold}
+TABLE.table2 TD { background-color:FFFFFF;  width:auto; FONT: 12px; color:696969; valign:right; text-decoration: none;}
+TABLE.table2 TD a { background-color:FFFFFF;  width:auto; FONT: 12px; color:696969; valign:right; text-decoration: none;}
+
+TD.td1 { background-color:F8F8FF;  width:auto; FONT: 12px; color:696969; valign:right; }
+
+IMG { border:0; }

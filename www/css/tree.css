@@ -1,0 +1,58 @@
+TD {
+    FONT: 13px sans-serif;
+}
+BODY    {
+    FONT: 13px sans-serif;
+    BORDER: 0;
+	BORDER-LEFT: 1px inset;
+	BORDER-RIGHT: 1px inset;
+    BACKGROUND-COLOR: white;
+}
+.item {
+	line-height: 20px;
+	position: relative;
+	left: 0px;
+}
+A	{
+	text-decoration: none;
+	color: black;
+}
+A:hover { color:red; text-decoration:none; }
+
+.editable {
+	color: black;
+}
+.editable .selected {
+	background-color: #333399;
+	color: white;
+}
+.fixed {
+	color: #999999;
+}
+.fixed .selected {
+	color: #CCCCCC;
+	background-color: #333399;
+}
+.invisible {
+	font-style: italic;
+}
+.row {
+	height: 20px;
+}
+IMG.icon {
+	padding: 0px;
+	border: 0px;
+	margin: 0px;
+	margin-left: -3px;
+	margin-right: 3px;
+}
+IMG.flag {
+	margin-top: 5px;
+}
+TABLE.table { background:white; width:95%; align:center  }
+TABLE.table TH { background:beige; width:auto; }
+TABLE.table TD { background:blanchedalmond;  width:auto;  font-size:-1;  }
+
+IMG { border:0; }
+.text69 { font-family:tahoma; font-size:8pt; font-weight:normal; font-style:normal; color:696969; }
+.text69A { font-family:tahoma; font-size:8pt; font-weight:normal; font-style:normal; color:696969; text-decoration: underline; }

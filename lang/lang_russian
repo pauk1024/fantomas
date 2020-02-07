@@ -1,0 +1,37 @@
+lframe_userstraffic|&nbsp&#47Клиенты&nbspи&nbspТрафик
+lframe_monitor|&nbsp&#47Монитор
+lframe_reports|&nbsp&#47Отчеты
+lframe_groups|&nbsp&#47По группам
+lframe_shaper|&nbsp&#47Шейппер трафика
+lframe_subnets|&nbsp&#47По подсетям
+lframe_system|&nbsp&#47Система
+lframe_iptables|&nbsp<i>Iptables</i>
+lframe_ulog|&nbsp<i>ULOG</i>
+lframe_iproute|&nbsp<i>Iproute2</i>
+lframe_mysql|&nbsp<i>MySQL</i>
+lframe_crond|&nbsp<i>Crond</i>
+lframe_fantomaslogs|&nbsp<i>Логи Fantomas</i>
+lframe_options|&nbsp&#47Настройки
+lframe_policies|&nbsp&#47Политики
+lframe_policies_pollist|&nbsp<i>Полный список</i>
+lframe_policies_new|&nbsp<i>Создать</i>
+lframe_inits|&nbsp<i>Inits</i>
+lframe_ipset|&nbsp&#47Ipset
+lframe_ipset_panel|&nbsp<i>Сет-панель</i>
+lframe_ipset_editor|&nbsp<i>Редактор</i>
+lframe_networks|&nbsp<i>Подсети</i>
+lframe_links|&nbsp<i>Подключения</i>
+lframe_ports|&nbsp<i>Порты, фильтры</i>
+lframe_settings|&nbsp&#47Параметры
+lframe_settings_paths|&nbsp<i>Пути</i>
+lframe_settings_pathdir|&nbsp<i>Каталоги</i>
+lframe_settings_pathbin|&nbsp<i>Программы</i>
+lframe_settings_pathini|&nbsp<i>Прочее</i>
+lframe_settings_iface|&nbsp<i>Интерфейс</i>
+lframe_settings_system|&nbsp<i>Система</i>
+lframe_fusers|&nbsp<i>Пользователи Web</i>
+lframe_help|&nbsp<i>Справка</i>
+lframe_logout|&nbsp&#47Выход
+lframe_loginname|логин:
+lframe_php|&nbsp<i>PHP</i>
+lframe_natmon|&nbsp&#47Монитор NAT

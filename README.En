@@ -1,0 +1,105 @@
+# 
+#
+# Name: Fantomas Iptconf manager
+# Version: 2.8.2
+# Copyright 2010 Coreit! group
+# Author: Andrey Makarov (pauk)
+# Email: admin@coreit.ru
+# Web home: http://coreit.ru/fantomas/
+#
+#
+#
+#
+
+ What is this?
+ -------------
+
+    It's a source package of Fantomas Iptconf manager - PHP-based frontend system for
+manage clients network access and traffic accounting by using build-in 
+Netfilter features.
+    See more info in documentation:
+    http://coreit.ru/fantomas/fantomas-doc/
+    or get it in downloads:
+    http://coreit.ru/fantomas/?p=download
+
+
+
+ Minimum system requirements
+ ---------------------------
+
+    - Linux kernel 2.6.x
+    - PHP 5 
+    - Iptables 1.4.0 or above
+    - Ipset 2.x/3.x/4.x
+    - Ulogd 1.xx (recommended fresh git-source or 1.24+072009_patch)
+    - MySQL
+    - Apache
+    - SSH
+
+
+
+ Installing
+ ----------
+
+    WARNING! Before you begin install please read documentation to make sure of
+that your configuration is prepared correctly for installing Fantomas.
+
+    First you may open setup script and edit default envirounment section if you need.
+
+    1) Configuring:
+	
+	to start configure with default options just run:
+	
+	    ./setup config
+	
+	also you may specify some manual options. Here is full usage of "setup config":
+	
+	    ./setup config [--prefix=/usr/local/fantomas]
+			   [--httpd_alias=<aliasname>]
+			   [--useradd_login=<loginname> | --dont_useradd]
+	
+	Example:
+	
+	    ./setup config --prefix=/usr/fantomas --httpd_alias=bobmarley --useradd_login=batman
+
+    2) Installing:
+    
+	to start install you must run setup script with the same options as you run "setup config":
+	
+	    ./setup install [--prefix=/usr/local/fantomas]
+			    [--httpd_alias=<aliasname>]
+			    [--useradd_login=<loginname> | --dont_useradd]
+
+	Example:
+
+	    ./setup install --prefix=/usr/fantomas --httpd_alias=bobmarley --useradd_login=batman
+
+    3) Web first start wizard:
+    
+	After successful end of the installing stage you can use browser to open Fantomas 
+	web-interface. You will see a wizard having 5 steps to setting program options.
+	After wizard finish you will see a login page of Fantomas Iptconf, use default administrator
+	login to enter:
+	    login name: admin
+	    passwird: admin
+	
+    
+    Please, read documentation in section 3 for more information.
+
+
+
+ Upgrading from versions 0.2.4.x
+ -------------------------------
+
+    For upgrade Fantomas Iptconf from version 0.2.4 or 0.2.4.3 use script update.php.
+    See usage of:
+    
+	[php] ./update.php --oldpath=</full/path/to/old/iprconf_dir> [--ssh_user=<username>]
+								     [--ssh_host=<address>]
+								     [--ssh_port=<portnum>]
+
+    SSH related options, specified in command line, update-script will use as default option for 
+    ssh-connection which will be tested at working and further will be writed to config.php and used 
+    by Fantomas Iptconf for executing system and Iptables commands from web.
+
+

@@ -1,0 +1,486 @@
+#!/bin/bash
+#
+# iptcldr      Fantomas Iptconf loader (based on iptables 1.4.3.2 init script)
+# description: Fantomas Iptconf is the frontend toolware for enhancing management and configuring features of Netfilter framework
+#
+# chkconfig: 2345 08 92
+# description:	Starts and stops iptconf, saves iptables rules
+# version: 2.8.2.4
+#
+# config: /etc/sysconfig/iptables or /usr/local/iptconf/iptables
+# config: /etc/sysconfig/iptables-config or /usr/local/iptconf/iptables-config
+
+#---------------------------------------------
+
+getValue() {
+
+    [ -z "$1" ] && return ""
+    REPLY=$(cat $_iptconf_dir"/config.php" | awk -v opt="$1" 'BEGIN { FS="="; conf=0; } {
+    	gsub(/^\$/,""); gsub(/[ \t]/,"");
+    	if( $0=="###Configzone") { conf=1; next; }
+    	if( $0=="#########Endofconfigzone") { conf=0; next; }
+	if( conf==1) { 
+    	    if( $1==opt) {
+    		gsub(/^\"|\";$|;$/,"",$2);
+    		print($2); 
+    		exit;
+    	    }
+    	}
+    }');
+}
+
+
+#---------------------------------------------
+# defaults options definition section
+#
+IPTABLES=iptables
+IPV=${IPTABLES%tables} # ip for ipv4 | ip6 for ipv6
+PROC_IPTABLES_NAMES=/proc/net/${IPV}_tables_names
+VAR_SUBSYS_IPTABLES=/var/lock/subsys/$IPTABLES
+[ ! -e "$VAR_SUBSYS_IPTABLES" ] && VAR_SUBSYS_IPTABLES=/var/lock/$IPTABLES
+_ipset="/usr/local/sbin/ipset"; [ ! -f $_ipset ] && _ipset=`which ipset`
+_modprobe="/sbin/modprobe"; [ ! -f $_modprobe ] && _modprobe=`which modprobe`
+_iptconf_dir="/usr/local/fantomas"
+
+_tabloid=$_iptconf_dir"/tools/tabloid"
+_listfile=$_iptconf_dir"/ipsetlist"
+
+_initmode=1
+
+RETVAL=0
+
+#--------------------------------------------
+# Source function library.
+. $_iptconf_dir/tools/functions
+
+#--------------------------------------------
+# init checks section
+#
+
+if [ ! -d $_iptconf_dir ]; then echo -n $"Fantomas directory is not found!"; failure; echo
+    exit 1
+fi
+if [ ! -f $_iptconf_dir"/config.php" ]; then
+    echo $"Fantomas configuration file config.php is not found!"; warning; echo
+    exit 1
+fi
+if [ ! -x `which awk` ]; then
+    echo -n $"AWK does not found!"; failure; echo
+    exit 0
+fi
+if [ ! -x /sbin/$IPTABLES ]; then
+    if [ ! -x `which iptables` ]; then
+	echo -n $"IPTABLES does not exist!"; warning; echo
+	exit 0
+    fi
+fi
+if lsmod 2>/dev/null | grep -q ipchains ; then
+    echo -n $"ipchains and $IPTABLES can not be used together."; warning; echo
+    exit 0
+fi
+
+if [ ! -f $_ipset ]; then echo -n "IPset is not found"; failure; exit 1; fi
+if [ ! -f $_modprobe ]; then echo -n "modprobe is not found"; failure; exit 1; fi
+if [ ! -f $_listfile ]; then echo -n "listfile is not found"; failure; exit 1; fi
+
+
+
+
+#--------------------------------------------
+# loading config
+
+getValue "iptables_save"; IPTABLES_DATA=$REPLY
+getValue "iptables_config"; IPTABLES_CONFIG=$REPLY
+getValue "sets_dir"; _ipsets_dir=$REPLY
+getValue "iproutabled"; _iproutabled=$REPLY
+getValue "iproute_init"; _iproute_init=$REPLY
+getValue "_ip"; _ip=$REPLY
+getValue "iptables_initmode"; _initmode=$REPLY
+
+
+#--------------------------------------------
+# Old or new modutils
+/sbin/modprobe --version 2>&1 | grep -q module-init-tools \
+    && NEW_MODUTILS=1 \
+    || NEW_MODUTILS=0
+
+# Default firewall configuration:
+IPTABLES_MODULES=""
+IPTABLES_MODULES_UNLOAD="yes"
+IPTABLES_SAVE_ON_STOP="yes"
+IPTABLES_SAVE_ON_RESTART="yes"
+IPTABLES_SAVE_COUNTER="yes"
+IPTABLES_STATUS_NUMERIC="yes"
+#--------------------------------------------
+# Load firewall configuration.
+[ -f "$IPTABLES_CONFIG" ] && . "$IPTABLES_CONFIG"
+
+#--------------------------------------------
+ipset_load() {
+    echo -n $"Loading ipset lists: "
+    $_ipset -nL &> /dev/null
+    if [ $? -ne 0 ]; then
+	$_modprobe ip_set
+	$_ipset -nL &> /dev/null
+	if [ $? -ne 0 ]; then
+	    echo "Module ip_set is not loaded!!!"; exit 1
+	fi
+    fi
+    ret=0
+    while read line
+    do
+	line1=${line// }
+	[ "${line:0:1}" == "#" ] && continue
+	if [ ! -z "$line1" ]; then
+    	    [ -z "$($_ipset -nL | grep $line1)" ] && $_ipset -R <"$_ipsets_dir/$line1"
+	fi
+    done <"$_listfile"
+    [ $ret -eq 0 ] && success || failure
+    echo
+}
+
+#--------------------------------------------
+ipset_flush() {
+    echo -n $"Flushing ipset lists: "
+    ret=0
+    while read line
+    do
+	line1=${line// }
+	if [ "${line:0:1}" == "#" ]; then continue; fi
+	if [ -n "$line1" ]; then
+	    $_ipset -F <"$_ipsets_dir/$line1"
+	    $_ipset -X <"$_ipsets_dir/$line1"
+	fi
+    done <$_listfile
+    [ $ret -eq 0 ] && success || failure
+    echo
+}
+
+#--------------------------------------------
+rmmod_r() {
+    # Unload module with all referring modules.
+    # At first all referring modules will be unloaded, then the module itself.
+    local mod=$1
+    local ret=0
+    local ref=
+
+    # Get referring modules.
+    # New modutils have another output format.
+    [ $NEW_MODUTILS = 1 ] \
+	&& ref=`lsmod | awk "/^${mod}/ { print \\\$4; }" | tr ',' ' '` \
+	|| ref=`lsmod | grep ^${mod} | cut -d "[" -s -f 2 | cut -d "]" -s -f 1`
+
+    # recursive call for all referring modules
+    for i in $ref; do
+	rmmod_r $i
+	let ret+=$?;
+    done
+
+    # Unload module.
+    # The extra test is for 2.6: The module might have autocleaned,
+    # after all referring modules are unloaded.
+    if grep -q "^${mod}" /proc/modules ; then
+	modprobe -r $mod > /dev/null 2>&1
+	let ret+=$?;
+    fi
+
+    return $ret
+}
+
+#--------------------------------------------
+flush_n_delete() {
+    # Flush firewall rules and delete chains.
+    [ -e "$PROC_IPTABLES_NAMES" ] || return 1
+
+    # Check if firewall is configured (has tables)
+    tables=`cat $PROC_IPTABLES_NAMES 2>/dev/null`
+    [ -z "$tables" ] && return 1
+
+    echo -n $"Flushing firewall rules: "
+    ret=0
+    # For all tables
+    for i in $tables; do
+        # Flush firewall rules.
+	$IPTABLES -t $i -F;
+	let ret+=$?;
+
+        # Delete firewall chains.
+#	$IPTABLES -t $i -X;
+#	let ret+=$?;
+
+	# Set counter to zero.
+#	$IPTABLES -t $i -Z;
+#	let ret+=$?;
+    done
+
+    [ $ret -eq 0 ] && success || failure
+    echo
+    return $ret
+}
+
+#--------------------------------------------
+set_policy() {
+    # Set policy for configured tables.
+    policy=$1
+
+    # Check if iptable module is loaded
+    [ ! -e "$PROC_IPTABLES_NAMES" ] && return 1
+
+    # Check if firewall is configured (has tables)
+    tables=`cat $PROC_IPTABLES_NAMES 2>/dev/null`
+    [ -z "$tables" ] && return 1
+
+    echo -n $"Setting chains to policy $policy: "
+    ret=0
+    for i in $tables; do
+	echo -n "$i "
+	case "$i" in
+	    raw)
+		$IPTABLES -t raw -P PREROUTING $policy \
+		    && $IPTABLES -t raw -P OUTPUT $policy \
+		    || let ret+=1
+		;;
+	    security)
+		$IPTABLES -t security -P INPUT $policy \
+		    && $IPTABLES -t security -P OUTPUT $policy \
+		    && $IPTABLES -t security -P FORWARD $policy \
+		    || let ret+=1
+		;;
+	    filter)
+                $IPTABLES -t filter -P INPUT $policy \
+		    && $IPTABLES -t filter -P OUTPUT $policy \
+		    && $IPTABLES -t filter -P FORWARD $policy \
+		    || let ret+=1
+		;;
+	    nat)
+		$IPTABLES -t nat -P PREROUTING $policy \
+		    && $IPTABLES -t nat -P POSTROUTING $policy \
+		    && $IPTABLES -t nat -P OUTPUT $policy \
+		    || let ret+=1
+		;;
+	    mangle)
+	        $IPTABLES -t mangle -P PREROUTING $policy \
+		    && $IPTABLES -t mangle -P POSTROUTING $policy \
+		    && $IPTABLES -t mangle -P INPUT $policy \
+		    && $IPTABLES -t mangle -P OUTPUT $policy \
+		    && $IPTABLES -t mangle -P FORWARD $policy \
+		    || let ret+=1
+		;;
+	    *)
+	        let ret+=1
+		;;
+        esac
+    done
+
+    [ $ret -eq 0 ] && success || failure
+    echo
+    return $ret
+}
+
+#--------------------------------------------
+save() {
+    # Check if iptable module is loaded
+    [ ! -e "$PROC_IPTABLES_NAMES" ] && return 1
+
+    # Check if firewall is configured (has tables)
+    tables=`cat $PROC_IPTABLES_NAMES 2>/dev/null`
+    [ -z "$tables" ] && return 1
+
+    echo -n $"Saving firewall rules to $IPTABLES_DATA: "
+
+#    OPT=
+#    [ "x$IPTABLES_SAVE_COUNTER" = "xyes" ] && OPT="-c"
+    OPT="-c"
+
+    ret=0
+    TMP_FILE=`/bin/mktemp -q /tmp/$IPTABLES.XXXXXX` \
+	&& chmod 600 "$TMP_FILE" \
+	&& $IPTABLES-save $OPT > $TMP_FILE 2>/dev/null \
+	&& size=`stat -c '%s' $TMP_FILE` && [ $size -gt 0 ] \
+	|| ret=1
+    if [ $ret -eq 0 ]; then
+	if [ -e $IPTABLES_DATA ]; then
+	    cp -f $IPTABLES_DATA $IPTABLES_DATA.save \
+		&& chmod 600 $IPTABLES_DATA.save \
+		|| ret=1
+	fi
+	if [ $ret -eq 0 ]; then
+	    cp -f $TMP_FILE $IPTABLES_DATA \
+		&& chmod 600 $IPTABLES_DATA \
+	        || ret=1
+	fi
+    fi
+    [ $ret -eq 0 ] && success || failure
+    echo
+    rm -f $TMP_FILE
+    return $ret
+}
+
+#--------------------------------------------
+start() {
+    ipset_load
+    # Do not start if there is no config file.
+    [ ! -f "$IPTABLES_DATA" ] && touch "$IPTABLES_DATA"
+
+    echo -n $"Applying $IPTABLES firewall rules: "
+
+    $IPTABLES -t mangle -L COUNT_IN &> /dev/null; [ $? -ne 0 ] && $IPTABLES -t mangle -N COUNT_IN
+    $IPTABLES -t mangle -L COUNT_OUT &> /dev/null; [ $? -ne 0 ] && $IPTABLES -t mangle -N COUNT_OUT
+    $IPTABLES -t mangle -L PORTFILTER &> /dev/null; [ $? -ne 0 ] && $IPTABLES -t mangle -N PORTFILTER
+    $IPTABLES -t mangle -L COUNT_NETS &> /dev/null; [ $? -ne 0 ] && $IPTABLES -t mangle -N COUNT_NETS
+    $IPTABLES -t mangle -L COUNT_NETS_FWD &> /dev/null; [ $? -ne 0 ] && $IPTABLES -t mangle -N COUNT_NETS_FWD
+    $IPTABLES -t mangle -L COUNT_NETS_LOC &> /dev/null; [ $? -ne 0 ] && $IPTABLES -t mangle -N COUNT_NETS_LOC
+
+echo "_initmode .$_initmode."
+
+    if [ "$_initmode" == "0" ]; then
+	$IPTABLES-restore -c $IPTABLES_DATA
+	if [ $? -eq 0 ]; then
+	    success; echo
+	else
+	    failure; echo; return 1
+	fi
+    fi
+    
+    # Load additional modules (helpers)
+    if [ -n "$IPTABLES_MODULES" ]; then
+	echo -n $"Loading additional $IPTABLES modules: "
+	ret=0
+	for mod in $IPTABLES_MODULES; do
+	    echo -n "$mod "
+	    modprobe $mod > /dev/null 2>&1
+	    let ret+=$?;
+	done
+	[ $ret -eq 0 ] && success || failure
+	echo
+    fi
+
+    if [ "$_iproutabled" == "TRUE" ]; then
+	if [ ! -f $_tabloid ]; then
+	    echo $"Tabloid is not found at path $_tabloid"; failure; echo
+	else 
+	    $_tabloid reload
+	fi
+    fi
+    
+
+    if [ "$_initmode" == "1" ]; then
+	$_iptconf_dir/iptconf.php nokeepcounts reload
+    fi
+    
+    touch $VAR_SUBSYS_IPTABLES
+    return $ret
+}
+
+#--------------------------------------------
+stop() {
+    # Do not stop if iptables module is not loaded.
+    [ -e "$PROC_IPTABLES_NAMES" ] || return 1
+    
+    if [ "$_initmode" == "1" ]; then
+	$_iptconf_dir/iptconf.php savecounts
+    else 
+	save
+    fi
+
+    flush_n_delete
+    set_policy ACCEPT
+    
+    if [ "x$IPTABLES_MODULES_UNLOAD" = "xyes" ]; then
+	echo -n $"Unloading $IPTABLES modules: "
+	ret=0
+	rmmod_r ${IPV}_tables
+	let ret+=$?;
+	rmmod_r ${IPV}_conntrack
+	let ret+=$?;
+	[ $ret -eq 0 ] && success || failure
+	echo
+    fi
+    
+    ipset_flush
+    
+    rm -f $VAR_SUBSYS_IPTABLES
+    return $ret
+}
+
+#--------------------------------------------
+status() {
+    tables=`cat $PROC_IPTABLES_NAMES 2>/dev/null`
+
+    # Do not print status if lockfile is missing and iptables modules are not 
+    # loaded.
+    # Check if iptable module is loaded
+    if [ ! -f "$VAR_SUBSYS_IPTABLES" -a -z "$tables" ]; then
+	echo $"Firewall is stopped."
+	return 1
+    fi
+
+    # Check if firewall is configured (has tables)
+    if [ ! -e "$PROC_IPTABLES_NAMES" ]; then
+	echo $"Firewall is not configured. "
+	return 1
+    fi
+    if [ -z "$tables" ]; then
+	echo $"Firewall is not configured. "
+	return 1
+    fi
+
+    NUM=
+    [ "x$IPTABLES_STATUS_NUMERIC" = "xyes" ] && NUM="-n"
+    VERBOSE= 
+    [ "x$IPTABLES_STATUS_VERBOSE" = "xyes" ] && VERBOSE="--verbose"
+    COUNT=
+    [ "x$IPTABLES_STATUS_LINENUMBERS" = "xyes" ] && COUNT="--line-numbers"
+
+    for table in $tables; do
+	echo $"Table: $table"
+	$IPTABLES -t $table --list $NUM $VERBOSE $COUNT && echo
+    done
+
+    return 0
+}
+
+#--------------------------------------------
+restart() {
+    stop
+    start
+}
+#--------------------------------------------
+
+
+case "$1" in
+    start)
+	start
+	RETVAL=$?
+	;;
+    stop)
+	stop
+	RETVAL=$?
+	;;
+    restart)
+	restart
+	RETVAL=$?
+	;;
+    condrestart)
+	[ -e "$VAR_SUBSYS_IPTABLES" ] && restart
+	;;
+    status)
+	status
+	RETVAL=$?
+	;;
+    panic)
+	flush_n_delete
+	set_policy DROP
+	RETVAL=$?
+        ;;
+    save)
+	save
+	RETVAL=$?
+	;;
+    *)
+	echo $"Usage: $0 {start|stop|restart|condrestart|status|panic|save}"
+	exit 1
+	;;
+esac
+
+exit $RETVAL

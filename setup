@@ -1,0 +1,1350 @@
+#!/bin/bash
+######
+# Name: Fantomas Iptconf manager
+# Version: 2.8
+# Copyright 2009 Coreit! group
+# Author: Andrey Makarov (pauk)
+# Email: admin@coreit.ru
+# Web: http://coreit.ru/fantomas/
+#
+# Scriptname: setup
+# Description: Installation script for Fantomas Iptconf
+# Version: 2.8.2.12
+######
+
+###### ---------------------------------------------
+# Default's define section
+
+# Apache directory path
+httpd_path="/usr/local/apache"
+httpd_conf_path="/usr/local/apache/conf/httpd.conf"
+
+# MySQL parameters 
+mysql_host="127.0.0.1"
+mysql_user="root"
+mysql_password="123456"
+
+# Text key for passwords crypting 
+passw_crypt_key="somekey"
+
+# Iptables binary path
+iptables_path="/sbin/iptables"
+
+# Ipset binary path
+ipset_path="/usr/local/sbin/ipset"
+
+# Nmap binary path
+nmap_path="/usr/bin/nmap"
+
+# MySQL binary path
+mysql_path="/usr/bin/mysql"
+
+# MySQLAdmin binary path
+_mysqladmin="/usr/bin/mysqladmin"
+
+# Service binary path
+_service="/sbin/service"
+
+# Sudo  binary path
+sudo_path="/usr/bin/sudo"
+
+# Grep binary path
+grep_path="/bin/grep"
+
+# IP binary path
+ip_path="/sbin/ip"
+
+# Top binary path
+top_path="/usr/bin/top"
+
+# Ulogd binary path
+ulogd_path="/usr/local/sbin/ulogd"
+
+# PHP binary path
+php_path="/usr/local/bin/php"
+
+# Crond  binary path
+_crond="/usr/sbin/crond"
+
+# Crontabd binary path
+_crontabd="/usr/bin/crontab"
+
+# Echo binary path
+_echo="/bin/echo"
+
+# Chkconfig and Sysv-rc-conf binary path
+_chkconfig="/sbin/chkconfig"
+_sysv_rc_conf="/usr/sbin/sysv-rc-conf"
+
+# Whois binary path
+_whois="/usr/bin/whois"
+
+# Tc binary path
+_tc="/sbin/tc"
+
+# Lsmod binary path
+_lsmod="/sbin/lsmod"
+
+# Modprobe binary path
+_modprobe="/sbin/modprobe"
+
+# Ifconfig binary path
+_ifconfig="/sbin/ifconfig"
+
+# Ps binary path
+_ps="/bin/ps"
+
+# Kill binary path
+_kill="/bin/kill"
+
+# Iptables init-script
+iptables_init="/etc/init.d/iptables"
+
+# Name for alias which will be used for creating alias for Fantomas in httpd.conf like http://host/fantomas/
+fantomas_alias="fantomas"
+
+# Path to PHP config ( php.ini )
+_php_ini="/usr/local/lib/php.ini"
+
+###### ---------------------------------------------
+# core-related define section
+
+which yum &> /dev/null
+if [ $? -eq 0 ]; then
+    _yum=`which yum`; [ $? -ne 0 ] && _yum=""
+fi
+which aptitude &> /dev/null
+if [ $? -eq 0 ]; then
+    _aptitude=`which aptitude`; [ $? -ne 0 ] && _aptitude=""
+fi
+default_rctool=
+_create_login=1
+_loginname="fantomas"
+_useradd=`which useradd`; [ $? -ne 0 ] && _useradd=
+_userdel=`which userdel`; [ $? -ne 0 ] && _userdel=
+_passwd=`which passwd`; [ $? -ne 0 ] && _passwd=
+_awk=`which awk`; [ $? -ne 0 ] && _awk="awk"
+_id=`which id`; [ $? -ne 0 ] && _id=
+iptables_data=
+iptables_config=
+if [ -f $iptables_init ]; then
+    ipt=`cat $iptables_init | awk 'BEGIN {FS="=";} $0~/^IPTABLES[ =]/ {print($2);}'`
+    iptables_data=`cat $iptables_init | awk 'BEGIN {FS="=";} $0~/^IPTABLES_DATA[ =]/ { print($2);}'`; iptables_data=${iptables_data//\$IPTABLES/$ipt}
+    iptables_config=`cat $iptables_init | awk 'BEGIN {FS="=";} $0~/^IPTABLES_CONFIG[ =]/ { print($2);}'` iptables_config=${iptables_config//\$\{IPTABLES\}/$ipt}
+else 
+    iptables_init=
+fi
+
+if [ -z $iptables_data ] || [ -z $iptables_config ]; then
+    if [ -e "/etc/sysconfig" ]; then
+	[ -f "/etc/sysconfig/iptables" ] && iptables_data="/etc/sysconfig/iptables"
+	[ -f "/etc/sysconfig/iptables-config" ] && iptables_config="/etc/sysconfig/iptables-config"
+    fi
+fi
+iptables_usemode=0
+if [ ! -z $iptables_init ]; then
+    if [ -x $default_rctool ]; then
+	$default_rctool --list `echo $iptables_init | awk 'BEGIN {FS="/";} { print($NF);}'` &> /dev/null
+	iptables_usemode=$?
+    else
+	iptables_usemode=99
+    fi
+else
+    iptables_usemode=1
+fi
+system=
+ls /etc/debian* &> /dev/null; [ $? -eq 0 ] && system="debian"
+ls /etc/redhat* &> /dev/null; [ $? -eq 0 ] && system="redhat"
+httpd_servicename=
+[ -f "/etc/init.d/httpd" ] && httpd_servicename="httpd"
+[ -z "$httpd_servicename" ] && [ -f "/etc/init.d/apache" ] && httpd_servicename="apache"
+[ -z "$httpd_servicename" ] && [ -f "/etc/init.d/apache2" ] && httpd_servicename="apache2"
+if [ ! -f "$httpd_conf_path" ]; then
+    if [ -e /etc/apache2/apache2.conf ]; then
+	httpd_conf=/etc/apache2
+	httpd_conf_path=/etc/apache2/apache2.conf
+    elif [ -e /etc/httpd/conf/httpd.conf ]; then
+	httpd_conf=/etc/httpd
+	httpd_conf_path=/etc/httpd/conf/httpd.conf
+    elif [ -e /www/conf/httpd.conf ]; then
+	httpd_conf=/www
+	httpd_conf_path=/www/conf/httpd.conf
+    fi
+fi
+if [ ! -f "$_php_ini" ]; then
+    [ -f /etc/php.ini ] && _php_ini=/etc/php.ini
+    [ ! -f "$_php_ini" ] && [ -f /usr/lib/php.ini ] && _php_ini=/usr/lib/php.ini
+    [ ! -f "$_php_ini" ] && [ -f /usr/local/lib/php.ini ] && _php_ini=/usr/local/lib/php.ini
+    [ ! -f "$_php_ini" ] && [ -f /usr/etc/php.ini ] && _php_ini=/usr/etc/php.ini
+    [ ! -f "$_php_ini" ] && [ -f /usr/local/etc/php.ini ] && _php_ini=/usr/local/etc/php.ini
+fi
+
+###### ---------------------------------------------
+
+fdelete() {
+    
+    while [ 1 ]; do
+	echo -n "Are you sure you want to delete Fantomas? ( Y/N )"; read answ444
+	case "$answ444" in 
+	"Y" | "y")
+	    break
+	    ;;
+	"N" | "n")
+	    exit; break
+	    ;;
+	*)
+	    continue
+	    ;;
+	esac
+    done
+    
+    echo
+    echo "- Patching back /etc/sudoers ..."
+
+    [ -f /etc/sudoers.fantomas ] && rm -f /etc/sudoers.fantomas
+    [ -f /etc/sudoers.fantomas ] && rm -f /etc/sudoers.fantomas.1
+
+    _loginname=`awk '{ line=$0;
+	if(line=="##Fantomas configured") {flin=1; next}
+	if(line=="##End Fantomas configured") {flin=0; next}
+	if(index(line,"requretty")>0) {gsub("#","",line)}
+	if(flin==1) {print line}
+    }' /etc/sudoers | awk '{print($1);}'`
+    
+    if [ ! -z "$_loginname" ] && [ ! -z "$_userdel" ]; then
+	$_userdel -f $_loginname
+    else 
+	echo
+	echo "-- Can't find USERDEL, login $_loginname will not be delete ..."
+    fi
+
+    awk '{ line=$0;
+	if(line=="##Fantomas configured") {flin=1; next}
+	if(line=="##End Fantomas configured") {flin=0; next}
+	if(index(line,"requretty")>0) {gsub("#","",line)}
+	if(flin==0) {print line}
+    }' /etc/sudoers >> /etc/sudoers.fantomas
+    mv /etc/sudoers /etc/sudoers.fantomas.1
+    mv /etc/sudoers.fantomas /etc/sudoers
+        
+    echo
+    echo "- Patching back httpd.conf ..."
+
+    if [ "$system" == "debian" ] && [ -e "$httpd_path/sites-available/default" ]; then
+    
+	if [ -f "$httpd_path/sites-available/default.orig.bak" ]; then
+	    mv "$httpd_path/sites-available/default" "$httpd_path/sites-available/default.fantomas"
+	    mv "$httpd_path/sites-available/default.orig.bak" "$httpd_path/sites-available/default"
+	else
+	    awk '{ line=$0;
+		if(line=="##Fantomas configured") {flin=1; next}
+	        if(line=="##End Fantomas configured") {flin=0; next}
+		if(flin==0) {print line} 
+	    }' "$httpd_path/sites-available/default" >> "$httpd_path/sites-available/default.fantomas"
+	    mv "$httpd_path/sites-available/default" "$httpd_path/sites-available/default.fantomas.1"
+	    mv "$httpd_path/sites-available/default.fantomas" "$httpd_path/sites-available/default"
+	fi
+    else 
+
+	awk '{ line=$0;
+	    if(line=="##Fantomas configured") {flin=1; next}
+	    if(line=="##End Fantomas configured") {flin=0; next}
+	    if(flin==0) {print line} 
+	}' "$httpd_conf_path" >>"$httpd_conf_path.fantomas"
+	mv $httpd_conf_path $httpd_conf_path.fantomas.1 
+	mv $httpd_conf_path.fantomas $httpd_conf_path
+
+    fi
+
+    service $httpd_servicename restart
+
+    echo
+    echo "- Deleting iptcldr service ..."
+
+    if [ -f /etc/init.d/iptcldr ]; then
+	if [ "$default_rctool" == "chkconfig" ]; then
+	    chkconfig --del iptcldr 
+	    chkconfig --add iptables
+	    chkconfig --level 345 iptables on
+	fi
+	if [ "$default_rctool" == "sysv-rc-conf" ]; then
+	    $_sysv_rc_conf iptcldr off
+	    $_sysv_rc_conf --level 345 iptables on
+	fi
+	rm -f /etc/init.d/iptcldr
+
+    fi
+    
+    [ -e "/etc/cron.hourly/fantomas_savecounters" ] && rm -f /etc/cron.hourly/fantomas_savecounters
+
+    echo
+    echo "- Deleting install directory ..."
+
+    [ -e $install_path ] && rm -rf $install_path
+    
+    [ -f ./config.ini ] && rm -f ./config.ini
+    
+    if [ -f ./iptcldr.default ] && [ -f ./iptcldr ]; then
+	rm -f ./iptcldr
+	mv ./iptcldr.default ./iptcldr
+    fi
+    if [ -f ./iptconf.php.default ] && [ -f ./iptconf.php ]; then
+	rm -f ./iptconf.php
+	mv ./iptconf.php.default ./iptconf.php
+    fi
+    if [ -f ./config.php.default ] && [ -f ./config.php ]; then
+	rm -f ./config.php
+	mv ./config.php.default ./config.php
+    fi
+    
+    echo
+
+    exit 0
+
+}
+
+###### --------------------------------------------------------
+
+look4() {
+
+    if [ -z $1 ]; then
+	return 1
+    else
+	vname=$1
+    fi
+    REPLY=
+    abase=([1]="/bin" [2]="/sbin" [4]="/usr/bin" [5]="/usr/sbin" [6]="/usr/local/sbin" [7]="/usr/local/bin" [8]="/usr/local/mysql/bin") 
+    REPLY=`which $vname`
+    if [ ! -f $REPLY ]; then
+	REPLY=
+	for i in "${abase[@]}"; do
+	    REPLY=
+	    REPLY=$(echo "${abase[$i]}/$vname")
+	    [ -f $REPLY ] && break || continue
+	done
+    fi
+    return $?
+}
+
+###### --------------------------------------------------------
+
+pathchk() {
+    
+    REPLY=
+    if [ -z $1 ]; then
+	return 1
+    else 
+	chk=$1
+    fi
+    if [ ! -f $chk ] && [ "$setup_mode" == "config" ]; then
+	chk2=`echo ${chk// /} | awk 'BEGIN {FS="/";} {print($NF);}'`
+	REPLY=`which $chk2`
+	if [ ! -f "$REPLY" ] || [ -z "$REPLY" ]; then
+	    echo "Installer unable to find $chk ($chk2) ..."
+	fi
+	chk=$REPLY
+    fi
+    if [ ! -f $chk ] && [ "$setup_mode" == "inst" ]; then
+	[ ! -f ./config.ini ] && return 1
+	REPLY=`cat ./config.ini | grep ${chk// /} | awk '{gsub("\"","",$3); gsub(";","",$3); print($3);}'`
+	chk=$REPLY
+    fi
+    if [ ! -f $chk ]; then
+	echo " "
+	echo "[ $1 ]"
+	echo -n " -- $1 is not found, please specify it path: "; read cpath
+	if [ ! -f $cpath  ]; then 
+	    echo "error in path you input, exiting..."; exit 1
+	fi
+	REPLY=$cpath
+	cpath=
+    fi
+
+}
+
+###### --------------------------------------------------------
+
+initcheck() {
+
+if [ "$setup_mode" == "config" ]; then
+    echo
+    echo -e "\033[1;34m Welcome to Fantomas IptConf $version installation!\033[0m"
+    echo
+    echo -e "\033[1m Step 1: Checking environment\033[0m"
+    echo
+    echo
+else
+    echo 
+    echo "- Loading init config data ..."
+    echo 
+fi
+
+pkgdude=
+if [ ! -z $_yum ]; then 
+    pkgdude="YUM"
+    pkgcmd="$_yum install"
+fi
+if [ ! -z $_aptitude ]; then
+    pkgdude="Aptitude"
+    pkgcmd="$_aptitude install"
+fi
+    echo "- Found $pkgdude packager! ..."
+    echo
+
+
+[ "$setup_mode" == "config" ] && echo " -- checking: PHP"
+if [ ! -f $php_path ]; then
+    php_path=`which php`
+    if [ $? -ne 0 ]; then
+	echo " -- Error searching PHP. PHP is needed, exiting..."; exit 1
+    fi
+fi
+if [ ! -f "/bin/php" ]; then
+    if [ ! -f $php_path ]; then
+	echo " -- PHP interpretator is not found, please specify it path: "; read cpath
+	if [ ! -f $cpath ]; then
+	    echo "PHP is needed, exiting.."; exit 1
+	fi
+	php_path=$cpath
+    fi
+    ln -s -t /bin $php_path
+fi
+cpath=
+
+if [ ! -f "$_php_ini" ]; then
+    inivar=
+    inivar=`$php_path -i | awk '$0~/Configuration File/&&/Path/ { print(substr($0,index($0,"=")+3));}'`
+    [ ! -z "$inivar" ] && _php_ini="$inivar/php.ini"
+fi
+pathchk $_php_ini
+if [ ! -z $REPLY ]; then
+    _php_ini=$REPLY
+fi
+
+#------------------ 
+
+
+if [ -f "./config.ini" ] && [ "$setup_mode" == "config" ]; then 
+    echo -n "Fantomas Iptconf is allready configured. Reconfigure? ( Y/N ): "; read answchkcfg
+    if [ $(expr index "Nn" $answchkcfg) != "0" ]; then
+	return;
+    fi
+    mv -f ./config.ini ./config.ini.bak
+fi
+answchkcfg=
+
+[ "$setup_mode" == "config" ] && echo " -- checking: Iptables"
+if [ ! -f $iptables_path ]; then
+    iptables_path=`which iptables`
+    if [ $? -qt 0 ]; then
+	echo "Error searching Iptables! What we doing here, exiting..."; exit 1
+    fi
+fi
+if [ ! -f $iptables_path ]; then
+    echo " "
+    echo "[ $iptables_path ]"
+    echo -n " -- Iptables is not found, please specify it path: "; read cpath
+    if [ ! -f $cpath  ]; then 
+	echo "Iptables is needed, exiting..."; exit
+    fi
+    iptables_path=$cpath
+fi
+[ "$setup_mode" == "config" ] && echo "\$_iptables = \"$iptables_path\";" >> ./config.ini
+cpath=
+
+#-------------------------------
+
+[ "$setup_mode" == "config" ] && echo " -- checking: IPset"
+if [ -f ./config.ini ]; then
+    inivar=
+    inivar=`cat ./config.ini | grep _ipset | awk '{print(substr($3,2,length($3)-3));}'`
+    [ ! -z "$inivar" ] && ipset_path="$inivar"
+fi
+pathchk $ipset_path
+if [ ! -z $REPLY ]; then
+    ipset_path=$REPLY
+    [ "$setup_mode" == "config" ] && echo "\$_ipset = \"$ipset_path\";" >> ./config.ini
+fi
+
+[ "$setup_mode" == "config" ] && echo " -- checking: MySQL"
+if [ -f ./config.ini ]; then
+    inivar=
+    inivar=`cat ./config.ini | grep _mysql | awk '{print(substr($3,2,length($3)-3));}'`
+    [ ! -z "$inivar" ] && mysql_path="$inivar"
+fi
+pathchk $mysql_path
+if [ ! -z $REPLY ]; then
+    mysql_path=$REPLY
+    [ "$setup_mode" == "config" ] && echo "\$_mysql = \"$mysql_path\";" >> ./config.ini
+fi
+
+[ "$setup_mode" == "config" ] && echo " -- checking: MySQLAdmin"
+if [ -f ./config.ini ]; then
+    inivar=
+    inivar=`cat ./config.ini | grep _mysqladmin | awk '{print(substr($3,2,length($3)-3));}'`
+    [ ! -z "$inivar" ] && _mysqladmin="$inivar"
+fi
+pathchk $_mysqladmin
+if [ ! -z $REPLY ]; then
+    _mysqladmin=$REPLY
+    [ "$setup_mode" == "config" ] && echo "\$_mysqladmin = \"$_mysqladmin\";" >> ./config.ini
+fi
+
+[ "$setup_mode" == "config" ] && echo " -- checking: Service"
+if [ -f ./config.ini ]; then
+    inivar=
+    inivar=`cat ./config.ini | grep _service | awk '{print(substr($3,2,length($3)-3));}'`
+    [ ! -z "$inivar" ] && _service="$inivar"
+fi
+pathchk $_service
+if [ ! -z $REPLY ]; then
+    _service=$REPLY
+    [ "$setup_mode" == "config" ] && echo "\$_service = \"$_service\";" >> ./config.ini
+fi
+
+
+[ "$setup_mode" == "config" ] && echo " -- checking: Chkconfig && Sysv-rc-conf"
+which chkconfig &> /dev/null
+rc1=$?
+[ $rc1 -eq 0 ] && default_rctool="chkconfig"
+if [ $rc1 -ne 0 ]; then
+    which sysv-rc-conf &> /dev/null
+    rc2=$?
+    [ $rc2 -eq 0 ] && default_rctool="sysv-rc-conf"
+fi
+if [ $rc1 -ne 0 ] && [ $rc2 -ne 0 ]; then
+    while [ 1 ]; do
+	echo " "
+	echo -n " -- RC Manager is not found, process install chkconfig with \"$pkgcmd\"? ( Y/N ): "; read answchkcfg
+	case "$answchkcfg" in
+	"Y" | "y")
+	    answchkcfg="y"; break
+	    ;;
+	"N" | "n")
+	    answchkcfg="n"; break
+	    ;;
+	esac
+    done
+fi
+if [ "$answchkcfg" == "y" ]; then
+    cmd="$pkgcmd chkconfig"
+    $cmd
+    [ $? -ne 0 ] && echo " -- Warning! Package installer has return error status code from running install chkconfig!" 
+    [ $? -eq 0 ] && default_rctool="chkconfig"
+fi
+answchkcfg=
+if [ "$default_rctool" == "chkconfig" ]; then
+    pathchk $_chkconfig
+    if [ ! -z $REPLY ]; then
+	_chkconfig=$REPLY
+	[ "$setup_mode" == "config" ] && echo "\$_chkconfig = \"$_chkconfig\";" >> ./config.ini
+    fi
+    [ "$setup_mode" == "config" ] && echo "\$default_rctool = \"chkconfig\";" >> ./config.ini
+elif [ "$default_rctool" == "sysv-rc-conf" ]; then
+    pathchk $_sysv_rc_conf
+    if [ ! -z $REPLY ]; then
+	_sysv_rc_conf=$REPLY
+	[ "$setup_mode" == "config" ] && echo "\$_sysv_rc_conf = \"$_sysv_rc_conf\";" >> ./config.ini
+    fi
+    [ "$setup_mode" == "config" ] && echo "\$default_rctool = \"sysv_rc_conf\";" >> ./config.ini
+fi
+
+[ "$setup_mode" == "config" ] && echo " -- checking: Sudo"
+if [ ! -f "/etc/sudoers" ]; then
+    while [ 1 ]; do
+	echo " "
+	echo -n " -- Sudo is not found, process install it with \"$pkgcmd\"? ( Y/N ): "; read answchkcfg
+	case "$answchkcfg" in
+	"Y" | "y")
+	    answchkcfg="y"; break
+	    ;;
+	"N" | "n")
+	    answchkcfg="n"; break
+	    ;;
+	esac
+    done
+fi
+if [ "$answchkcfg" == "y" ]; then
+    cmd="$pkgcmd sudo"
+    $cmd
+    [ $? -ne 0 ] && echo " -- Warning! Package installer has return error status code from running install sudo!" 
+fi
+answchkcfg=
+
+
+pathchk $sudo_path
+if [ ! -z $REPLY ]; then
+    sudo_path=$REPLY
+    [ "$setup_mode" == "config" ] && echo "\$_sudo = \"$sudo_path\";" >> ./config.ini
+fi
+
+[ "$setup_mode" == "config" ] && echo " -- checking: Nmap"
+which nmap &> /dev/null
+if [ $? -ne 0 ]; then
+    while [ 1 ]; do
+	echo " "
+	echo -n " -- Nmap is not found, process install it with \"$pkgcmd\"? ( Y/N ): "; read answchkcfg
+	case "$answchkcfg" in
+	"Y" | "y")
+	    answchkcfg="y"; break
+	    ;;
+	"N" | "n")
+	    answchkcfg="n"; break
+	    ;;
+	esac
+    done
+fi
+if [ "$answchkcfg" == "y" ]; then
+    cmd="$pkgcmd nmap"
+    $cmd
+    [ $? -ne 0 ] && echo " -- Warning! Package installer has return error status code from running install nmap!" 
+fi
+answchkcfg=
+
+pathchk $nmap_path
+if [ -f ./config.ini ]; then
+    inivar=
+    inivar=`cat ./config.ini | grep _nmap | awk '{print(substr($3,2,length($3)-3));}'`
+    [ ! -z "$inivar" ] && nmap_path="$inivar"
+fi
+if [ ! -z $REPLY ]; then
+    nmap_path=$REPLY
+    [ "$setup_mode" == "config" ] && echo "\$_nmap = \"$nmap_path\";" >> ./config.ini
+fi
+
+[ "$setup_mode" == "config" ] && echo " -- checking: Grep"
+pathchk $grep_path
+if [ ! -z $REPLY ]; then
+    grep_path=$REPLY
+    [ "$setup_mode" == "config" ] && echo "\$_grep = \"$grep_path\";" >> ./config.ini
+fi
+
+[ "$setup_mode" == "config" ] && echo " -- checking: IP"
+pathchk $ip_path
+if [ ! -z $REPLY ]; then
+    ip_path=$REPLY
+    [ "$setup_mode" == "config" ] && echo "\$_ip = \"$ip_path\";" >> ./config.ini
+fi
+
+[ "$setup_mode" == "config" ] && echo " -- checking: Top"
+pathchk $top_path
+if [ ! -z $REPLY ]; then
+    top_path=$REPLY
+    [ "$setup_mode" == "config" ] && echo "\$_top = \"$top_path\";" >> ./config.ini
+fi
+
+[ "$setup_mode" == "config" ] && echo " -- checking: Httpd"
+if [ -f ./config.ini ]; then
+    inivar=
+    inivar=`cat ./config.ini | grep _httpd | awk '{print(substr($3,2,length($3)-3));}'`
+    [ ! -z "$inivar" ] && httpd_path="$inivar"
+    [ -f "$httpd_path/httpd.conf" ] && httpd_conf_path="$httpd_path/httpd.conf"
+    [ -f "$httpd_path/conf/httpd.conf" ] && httpd_conf_path="$httpd_path/conf/httpd.conf"
+    [ -f "$httpd_path/apache2.conf" ] && httpd_conf_path="$httpd_path/apache2.conf"
+fi
+if [ ! -e $httpd_path ] && [ "$system" == "redhat" ]; then
+    [ -f /etc/init.d/httpd ] && httpd_path=$(cat /etc/init.d/httpd | grep 'apachectl=' | awk '{
+	gsub("apachectl=",""); gsub("/bin/apachectl",""); print($0);}')
+fi
+if [ ! -e $httpd_path ] && [ "$system" == "debian" ]; then
+    [ -e /etc/apache2 ] && httpd_path="/etc/apache2"
+fi
+if [ ! -e $httpd_path ]; then
+    echo " "
+    echo "[ $http_path ]"
+    echo -n "Httpd.conf file is not found, please specify path to directory which contains httpd.conf: "; read cpath
+    if [ ! -f $cpath  ]; then 
+	echo "exiting..."; exit
+    fi
+    httpd_path=$cpath
+    [ -f "$httpd_path/httpd.conf" ] && httpd_conf_path="$httpd_path/httpd.conf"
+    [ -f "$httpd_path/conf/httpd.conf" ] && httpd_conf_path="$httpd_path/conf/httpd.conf"
+    [ -f "$httpd_path/apache2.conf" ] && httpd_conf_path="$httpd_path/apache2.conf"
+    if [ ! -f "$httpd_conf_path" ]; then
+	echo "$httpd_conf_path is not found, exiting."; exit
+    fi
+fi
+[ "$setup_mode" == "config" ] && echo "\$_httpd = \"$httpd_path\";" >> ./config.ini
+cpath=
+
+[ "$setup_mode" == "config" ] && echo " -- checking: Ulogd"
+pathchk $ulogd_path
+if [ ! -z $REPLY ]; then
+    ulogd_path=$REPLY
+    [ "$setup_mode" == "config" ] && echo "\$_ulogd = \"$ulogd_path\";" >> ./config.ini
+fi
+
+#[ "$setup_mode" == "config" ] && echo " -- checking: Crond"
+#pathchk $_crond
+#if [ ! -z $REPLY ]; then
+#    _crond=$REPLY
+#    [ "$setup_mode" == "config" ] && echo "\$_crond = \"$_crond\";" >> ./config.ini
+#fi
+
+[ "$setup_mode" == "config" ] && echo " -- checking: Crontab"
+if [ ! -f $_crontabd ]; then
+    _cronrtabd=`which crontab`
+    if [ $? -qt 0 ]; then
+	echo "Error searching Crond! Exiting..."; exit 1
+    fi
+fi
+if [ ! -f $_crontabd ]; then
+    echo " "
+    echo "[ $_crontabd ]"
+    echo -n "Crontab (program) is not found, please specify it path: "; read cpath
+    if [ ! -f $cpath  ]; then 
+	echo "exiting..."; exit
+    fi
+    _crontabd=$cpath
+fi
+[ "$setup_mode" == "config" ] && echo "\$_crontabd = \"$_crontabd\";" >> ./config.ini
+cpath=
+
+[ "$setup_mode" == "config" ] && echo " -- checking: Echo"
+pathchk $_echo
+if [ ! -z $REPLY ]; then
+    _echo=$REPLY
+    [ "$setup_mode" == "config" ] && echo "\$_echo = \"$_echo\";" >> ./config.ini
+fi
+
+[ "$setup_mode" == "config" ] && echo " -- checking: Whois"
+pathchk $_whois
+if [ ! -z $REPLY ]; then
+    _whois=$REPLY
+    [ "$setup_mode" == "config" ] && echo "\$_whois = \"$_whois\";" >> ./config.ini
+fi
+
+[ "$setup_mode" == "config" ] && echo " -- checking: Lsmod"
+pathchk $_lsmod
+if [ ! -z $REPLY ]; then
+    _lsmod=$REPLY
+    [ "$setup_mode" == "config" ] && echo "\$_lsmod = \"$_lsmod\";" >> ./config.ini
+fi
+
+[ "$setup_mode" == "config" ] && echo " -- checking: Modprobe"
+pathchk $_modprobe
+if [ ! -z $REPLY ]; then
+    _modprobe=$REPLY
+    [ "$setup_mode" == "config" ] && echo "\$_modprobe = \"$_modprobe\";" >> ./config.ini
+fi
+
+[ "$setup_mode" == "config" ] && echo " -- checking: Ifconfig"
+pathchk $_ifconfig
+if [ ! -z $REPLY ]; then
+    _ifconfig=$REPLY
+    [ "$setup_mode" == "config" ] && echo "\$_ifconfig = \"$_ifconfig\";" >> ./config.ini
+fi
+
+[ "$setup_mode" == "config" ] && echo " -- checking: PS"
+pathchk $_ps
+if [ ! -z $REPLY ]; then
+    _ps=$REPLY
+    [ "$setup_mode" == "config" ] && echo "\$_ps = \"$_ps\";" >> ./config.ini
+fi
+
+[ "$setup_mode" == "config" ] && echo " -- checking: TC"
+pathchk $_tc
+if [ ! -z $REPLY ]; then
+    _tc=$REPLY
+    [ "$setup_mode" == "config" ] && echo "\$_tc = \"$_tc\";" >> ./config.ini
+fi
+
+[ "$setup_mode" == "config" ] && echo " -- checking: Kill"
+pathchk $_kill
+if [ ! -z $REPLY ]; then
+    _kill=$REPLY
+    [ "$setup_mode" == "config" ] && echo "\$_kill = \"$_kill\";" >> ./config.ini
+fi
+
+
+echo "\$syslog = \"fantomas.log\";" >> ./config.ini
+
+
+#---------------------------------------
+
+
+
+[ ! -d $install_path ] && mkdir $install_path
+
+[ "$setup_mode" == "config" ] && echo "\$iptconf_dir = \"$install_path\";" >> ./config.ini
+
+[ "$setup_mode" == "config" ] && echo "\$lang_dir = \"$install_path/lang\";" >> ./config.ini
+
+[ "$setup_mode" == "config" ] && echo "\$sets_dir = \"$install_path/sets\";" >> ./config.ini
+
+[ "$setup_mode" == "config" ] && echo "\$users_dir = \"$install_path/usr\";" >> ./config.ini
+
+[ "$setup_mode" == "config" ] && echo "\$backup_dir = \"$install_path/_backup\";" >> ./config.ini
+
+[ "$setup_mode" == "config" ] && echo "\$wwwdir = \"$install_path/www\";" >> ./config.ini
+
+[ "$setup_mode" == "config" ] && echo "\$_logs_dir = \"$install_path/logs\";" >> ./config.ini
+
+[ "$setup_mode" == "config" ] && echo "\$iproute_init = \"$install_path/iproute2-init\";" >> ./config.ini
+
+
+if [ "$setup_mode" == "config" ]; then
+    if [ "$system" == "redhat" ]; then
+	if [ ! -z "$(cat $httpd_conf_path | grep -i '##fantomas')" ]; then
+	    echo "There is some fantomas strings found in httpd.conf, looks like Fantomas is allready installed. "
+	    rm ./config.ini; exit
+	fi
+    elif [ "$system" == "debian" ]; then
+	if [ -f "$httpd_path/sites-available/$fantomas_alias" ]; then
+	    if [ ! -z "$(cat $httpd_path/sites-available/$fantomas_alias | grep -i '##fantomas')" ]; then
+		echo "There is some fantomas strings found in httpd.conf, looks like Fantomas is allready installed. "
+		rm ./config.ini; exit
+	    fi
+	fi
+    fi
+    if [ ! -z "$(cat /etc/sudoers | grep -i '##fantomas')" ]; then
+	echo "There is some fantomas strings found in /etc/sudoers, looks like Fantomas is allready installed. "
+	rm ./config.ini; exit
+    fi
+    if [ -f /etc/init.d/iptcldr ]; then
+	echo "Found iptcldr service present, looks like Fantomas is allready installed."
+	rm ./config.ini; exit
+    fi
+fi
+
+[ "$setup_mode" == "config" ] && echo 
+[ "$setup_mode" == "config" ] && echo " Step 1: done."
+[ "$setup_mode" == "config" ] && echo 
+
+}
+
+
+######### --------------------------------------------------------
+
+fsetup() {
+
+echo 
+echo -e "\033[1m Step 2: setup\033[0m"
+echo
+
+which chkconfig &> /dev/null
+rc1=$?
+[ $rc1 -eq 0 ] && default_rctool="chkconfig"
+if [ $rc1 -ne 0 ]; then
+    which sysv-rc-conf &> /dev/null
+    rc2=$?
+    [ $rc2 -eq 0 ] && default_rctool="sysv-rc-conf"
+fi
+
+if [ ! -f ./config.ini ]; then 
+    while [ 1 ]; do
+	echo -n "Fantomas Iptconf is not configured, run configure? ( Y/N ): "; read answchkcfg
+	case "$answchkcfg" in
+	"Y" | "y")
+	    answchkcfg="y"; break
+	    ;;
+	"N" | "n")
+	    answchkcfg="n"; break
+	    ;;
+	esac
+    done
+    if [ "$answchkcfg" == "y" ]; then
+	initcheck
+    else
+	echo 
+	echo "To configure Fantomas Iptconf installation run ./setup config --prefix=</path/to/install/dir>"
+	exit 0
+    fi
+    answchkcfg=
+fi
+
+
+if [ $iptables_usemode -eq 0 ]; then
+    cp -f -T $iptables_data "$iptables_data.backup-fantomas"
+    $_service iptables save
+    $iptables_path -P OUTPUT ACCEPT
+    $iptables_path -P INPUT ACCEPT
+    $iptables_path -P FORWARD DROP
+    $iptables_path -t nat -F
+    $iptables_path -t mangle -F
+    $iptables_path -F
+    
+else
+
+    if [ ! -z $iptables_init ] && [ -f $iptables_init ]; then 
+        [ -f $iptables_data ] && cp -f -T $iptables_data "$iptables_data.backup-fantomas"
+        $iptables_init save
+        [ $? -ne 0 ] && echo "Error saving iptables configuration with $iptables_init. Warning!"
+    else 
+        echo " INFO: Iptables Init script is not found, installer will not backup your previous config (CTRL+C for stop me)..."
+        echo  
+    fi
+fi
+
+echo
+echo "- Creating Fantomas using chains in Iptables ..."
+echo
+
+if [ -z "`$iptables_path -t mangle -L | awk '$0~/COUNT_IN/ {print($0);}'`" ]; then
+    $iptables_path -t mangle -N COUNT_IN
+fi
+if [ -z "`$iptables_path -t mangle -L | awk '$0~/COUNT_OUT/ {print($0);}'`" ]; then
+    $iptables_path -t mangle -N COUNT_OUT
+fi
+if [ -z "`$iptables_path -t mangle -L | awk '$0~/PORTFILTER/ {print($0);}'`" ]; then
+    $iptables_path -t mangle -N PORTFILTER
+fi
+if [ -z "`$iptables_path -t mangle -L | awk '$0~/COUNT_NETS/ {print($0);}'`" ]; then
+    $iptables_path -t mangle -N COUNT_NETS
+fi
+if [ -z "`$iptables_path -t mangle -L | awk '$0~/COUNT_NETS_LOC/ {print($0);}'`" ]; then
+    $iptables_path -t mangle -N COUNT_NETS_LOC
+fi
+if [ -z "`$iptables_path -t mangle -L | awk '$0~/COUNT_NETS_FWD/ {print($0);}'`" ]; then
+    $iptables_path -t mangle -N COUNT_NETS_FWD
+fi
+
+#-------------------------
+
+httpd_user=`cat "$httpd_conf_path" | awk '$1~/User/ && $2!~/\$/'`
+if [ -z "$httpd_user" ] && [ -f "$httpd_path/envvars" ]; then
+    httpd_user=`cat $httpd_path/envvars | awk '$2~/APACHE_RUN_USER/ {print(substr($2,index($2,"=")+1));}'`
+fi
+if [ -z "$httpd_user" ]; then
+    httpd_user="nobody"
+fi 
+_grp=`$_id $httpd_user -gn`
+
+if [ -z "$_grp" ]; then
+    echo "Could not found ID, exiting..."; exit 1
+fi
+
+_PHP=`which php`
+if [ ! -f "$_PHP" ]; then
+    echo "Update error: could not found PHP!"; exit 1
+fi
+sess_path=`$_PHP -i | grep session.save_path | awk '{print($3);}'`
+if [ -d "$sess_path" ]; then
+    chown -R $httpd_user $sess_path
+fi
+
+#-------------------------
+
+
+if [ $_create_login -eq 1 ]; then
+    if [ ! -f "$_useradd" ] || [ ! -f "$_passwd" ]; then
+	echo
+	[ ! -f "$_useradd" ] echo "-- Ahtung!! USERADD is NOT FOUND! Login could not be added..." 
+	[ ! -f "$_passwd" ] echo "-- Ahtung!! PASSWD is NOT FOUND! Login could not be added..." 
+    else 
+	if [ "$_loginname" == "fantomas" ] || [ -z "$_loginname" ]; then
+	    echo "- Installer will create login which will be used at auth via ssh connection ..."
+	    while [ 1 ]; do
+		echo -n "-- Specify login name or leave blank for use default (fantomas): "; read _loginname
+		[ -z "$_loginname" ] && _loginname="fantomas"
+		if [ ! -z "$(cat /etc/passwd | grep '$_loginname')" ]; then
+		    echo
+		    echo " The specified login is allready exists, choose another ...."
+		    echo 
+		else 
+		    break
+		fi
+	    done
+	fi
+    
+	echo "-- Specify password for creating login .... "
+	$_useradd --create-home --base-dir /home --shell /bin/bash -g $_grp $_loginname
+	echo 
+	$_passwd $_loginname
+	echo "\$ssh_user = \"$_loginname\";" >> ./config.ini
+	
+	echo " " >> /etc/sudoers
+	echo "##Fantomas configured" >> /etc/sudoers
+	echo "$_loginname ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+	echo "##End Fantomas configured" >> /etc/sudoers
+	chk=`awk '$0~/requiretty/&&$0!~/^#/' /etc/sudoers`
+	if [ ! -z "$chk" ]; then
+	    [ -f /etc/sudoers.copy ] && rm -f /etc/sudoers.copy
+	    [ -f /etc/sudoers.1 ] && rm -f /etc/sudoers.1
+	    awk '{ if( $0~/requiretty/&&$1!~/^#/) $1="#"$1; 
+		print($0); }' /etc/sudoers > /etc/sudoers.1
+	    mv /etc/sudoers /etc/sudoers.copy
+	    mv /etc/sudoers.1 /etc/sudoers
+	fi
+    fi
+    
+
+
+fi
+
+#-------------------------
+
+echo "- Saving config..."
+echo 
+
+[ ! -d $install_path ] && mkdir $install_path
+
+[ ! -z $iptables_data ] && [ -f "$iptables_data" ] && cat $iptables_data > $install_path"/iptables.save" || touch $install_path"/iptables.save"
+iptables_data=$install_path"/iptables.save"
+iptables_config=$install_path"/iptables-config"
+touch $iptables_config
+echo "\$iptables_save = \"$iptables_data\";" >> ./config.ini
+echo "\$iptables_config = \"$iptables_config\";" >> ./config.ini
+
+IFS=" "
+flend=0
+while read -r line1; do
+    line_1=$line1
+    w1=`echo ${line_1// /} | awk '{ print substr($0,0,index($0,"="))}'`
+    
+    fl=0
+    while read -r line2; do
+	line_2=$line2
+	w2=`echo ${line_2// /} | awk '{ print substr($0,0,index($0,"="))}'`
+	if [ "$w1" == "$w2" ]; then fl=1; break; fi
+    done <"./config.ini"
+    tt=${line_1//#/}
+    [ "${tt// /}" == "Endofconfigzone" ] && flend=1
+    [ $flend -eq 1 ] && line2="$line1"
+    if [ $fl -eq 0 ]; then
+	echo "$line1" >> ./config1.php
+	echo " saving: $line1"
+    else 
+	echo "$line2" >> ./config1.php
+	echo " saving: $line2"
+    fi
+done <"./config.php"
+mv -f -T ./config.php ./config.php.default
+mv -f -T ./config1.php ./config.php
+
+if [ "$install_path" != "$(pwd)" ]; then
+    cp ./config.php $install_path
+    [ ! -e "$install_path/lang" ] && mkdir $install_path/lang
+    cp ./lang/* "$install_path/lang"
+    [ ! -e "$install_path/sets" ] && mkdir $install_path/sets
+    cp ./sets/* "$install_path/sets"
+    [ ! -e "$install_path/www" ] && mkdir $install_path/www
+    cp -R ./www/* "$install_path/www"
+    [ ! -e "$install_path/mysql" ] && mkdir $install_path/mysql
+    cp ./mysql/* "$install_path/mysql"
+    [ ! -e "$install_path/_backup" ] && mkdir $install_path/_backup
+    [ ! -e "$install_path/logs" ] && mkdir $install_path/logs
+    cp ./iproute2-init $install_path
+    cp ./policies $install_path
+    cp ./ports $install_path
+    cp ./shaperconf $install_path
+    cp ./VERSION $install_path
+fi
+touch $install_path/inits
+
+if [ "`$ipset_path -L | grep Name | awk '{ print $2 }'`" == "locals" ]; then
+    $ipset_path -F locals
+    $ipset_path -X locals
+fi
+
+
+
+cat ./iptconf.php | awk -v inst=$install_path 'BEGIN {FS="=";} { 
+	if($1~/^\$wwwdir/) { $2="= \""inst"/www\";"; }
+	if($1~/^\$iptconf_dir/) { $2="= \""inst"\";"; }
+	print($0);
+	}' > ./iptconf1.php
+
+mv ./iptconf.php ./iptconf.php.default
+mv ./iptconf1.php ./iptconf.php 
+if [ "$install_path" != "$(pwd)" ]; then
+    cp -f ./iptconf.php $install_path
+fi
+chmod 754 "$install_path/iptconf.php"
+
+cd tools
+cat ./tabloid | awk -v inst=$install_path 'BEGIN {FS="=";} { 
+	if($1~/^_iptconf_dir/) { $0="_iptconf_dir=\""inst"\""; }
+	print($0);
+	}' > ./tabloid1_1
+
+mv -f ./tabloid ./tabloid.default
+mv ./tabloid1_1 ./tabloid
+if [ "$install_path" != "$(pwd)" ]; then
+    [ ! -e "$install_path/tools" ] && mkdir $install_path/tools
+    cp ./* $install_path/tools
+    chmod 755 "$install_path/tools/tabloid"
+fi
+cd ..
+
+cat ./iptcldr | awk -v inst=$install_path 'BEGIN {FS="=";} { 
+	if($1~/^_iptconf_dir/) { $0="_iptconf_dir=\""inst"\""; }
+	print($0);
+	}' > ./iptcldr1_1
+
+mv -f ./iptcldr ./iptcldr.default
+mv ./iptcldr1_1 ./iptcldr
+if [ "$install_path" != "$(pwd)" ]; then
+    cp ./iptcldr $install_path
+fi
+
+echo 
+echo "Patching php.ini ..."
+echo 
+
+cat $_php_ini | awk 'BEGIN {FS="=";} {
+    if( $1~/^;output_buffering/) { gsub(/[ \t;]/,"",$1); $0=$1" = "$2; }
+    if( $1~/^max_execution_time/) { $2="1200"; $0=$1" = "$2;  } 
+    if( $1~/^memory_limit/) { $2="256M";  $0=$1" = "$2; } 
+    if( $1~/^allow_url_fopen/||/^;allow_url_fopen/) { $1="allow_url_fopen"; $2="On"; $0=$1" = "$2;  } 
+    print($0);
+    }' >> $_php_ini.fantomasff
+    
+mv $_php_ini $_php_ini.orig.bak
+mv $_php_ini.fantomasff $_php_ini
+
+
+
+#--------------------
+echo
+echo "- Creating httpd alias for Fantomas ..."
+echo
+
+if [ "$system" == "debian" ] && [ -e "$httpd_path/sites-available/default" ]; then
+
+    mv "$httpd_path/sites-available/default" "$httpd_path/sites-available/default.orig.bak"
+    cat "$httpd_path/sites-available/default.orig.bak" | grep -v '</VirtualHost>' > "$httpd_path/sites-available/default"
+
+    echo >> "$httpd_path/sites-available/default"
+    echo "##Fantomas configured" >> "$httpd_path/sites-available/default"
+    
+    echo "Alias /$fantomas_alias \"$install_path/www/\"" >> "$httpd_path/sites-available/default"
+    echo "<Directory \"$install_path/www\">" >> "$httpd_path/sites-available/default"
+    echo "	Options FollowSymLinks" >> "$httpd_path/sites-available/default"
+    echo "	AllowOverride none" >> "$httpd_path/sites-available/default"
+    echo "	Order allow,deny " >> "$httpd_path/sites-available/default"
+    echo "	Allow from all " >> "$httpd_path/sites-available/default"
+    echo "</Directory>" >> "$httpd_path/sites-available/default"
+    echo "##End Fantomas configured" >> "$httpd_path/sites-available/default"
+    
+    echo "</VirtualHost>" >> "$httpd_path/sites-available/default"
+    echo >> "$httpd_path/sites-available/default"
+
+else 
+
+    echo >> "$httpd_conf_path"
+    echo "##Fantomas configured" >> "$httpd_conf_path"
+    echo "Alias /$fantomas_alias \"$install_path/www/\"" >> "$httpd_conf_path"
+    echo "<Directory \"$install_path/www\">" >> "$httpd_conf_path"
+    echo "	Options FollowSymLinks" >> "$httpd_conf_path"
+    echo "	AllowOverride none" >> "$httpd_conf_path"
+    echo "	Order allow,deny " >> "$httpd_conf_path"
+    echo "	Allow from all " >> "$httpd_conf_path"
+    echo "</Directory>" >> "$httpd_conf_path"
+    echo "##End Fantomas configured" >> "$httpd_conf_path"
+
+fi
+
+echo
+echo "Restarting httpd..."
+echo
+
+htest=`echo $($default_rctool --list $httpd_servicename) | awk '{ split($0,aa); r=0; for(i in aa) if(index(aa[i],":o")!=0) r++; print r }'`
+if [ $htest != "0" ]; then
+    service $httpd_servicename restart
+else 
+    killall httpd
+    $httpd_path/bin/apachectl -k start
+fi
+
+
+echo
+echo
+echo "- Installing Iptconf init script..."
+echo " "
+if [ ! -f /etc/init.d/iptcldr ]; then
+    cp iptcldr /etc/init.d/iptcldr
+    chmod 755 /etc/init.d/iptcldr
+    if [ ! -z "$($default_rctool --list iptables | awk '/:on/ {print($0);}')" ]; then
+	$default_rctool iptables off
+    fi
+    if [ "$default_rctool" == "chkconfig" ]; then
+	$_chkconfig --add iptcldr
+	$_chkconfig --level 2345 iptcldr on
+    elif [ "$default_rctool" == "sysv-rc-conf" ]; then
+	$_sysv_rc_conf --level 2345S iptcldr on
+    fi
+fi
+
+if [ -d "/etc/cron.hourly" ]; then
+    [ -f "/etc/cron.hourly/fantomas_savecounters" ] && mv /etc/cron.hourly/fantomas_savecounters /etc/cron.hourly/fantomas_savecounters.bak
+    echo '#!/bin/bash' >> /etc/cron.hourly/fantomas_savecounters
+    echo >> /etc/cron.hourly/fantomas_savecounters
+    echo "cd $install_path" >> /etc/cron.hourly/fantomas_savecounters
+    echo "./iptconf.php savecounts" >> /etc/cron.hourly/fantomas_savecounters
+    echo "exit 0" >> /etc/cron.hourly/fantomas_savecounters
+    chmod 755 /etc/cron.hourly/fantomas_savecounters
+fi
+if [ -d "/etc/cron.monthly" ]; then
+    [ -f "/etc/cron.monthly/fantomas_newperiod" ] && mv /etc/cron.monthly/fantomas_newperiod /etc/cron.monthly/fantomas_newperiod.bak
+    echo '#!/bin/bash' >> /etc/cron.monthly/fantomas_newperiod
+    echo >> /etc/cron.monthly/fantomas_newperiod
+    echo "cd $install_path" >> /etc/cron.monthly/fantomas_newperiod
+    echo "./iptconf.php newperiod" >> /etc/cron.monthly/fantomas_newperiod
+    echo "exit 0" >> /etc/cron.monthly/fantomas_newperiod
+    chmod 755 /etc/cron.monthly/fantomas_newperiod
+fi
+[ -e "/etc/init.d/cron" ] && /etc/init.d/cron restart &>/dev/null
+[ -e "/etc/init.d/crond" ] && /etc/init.d/crond restart &>/dev/null
+
+
+[ ! -f $install_path/counters ] && touch $install_path/counters
+rm ./config.ini
+touch $install_path/1stconf
+
+chown -R $httpd_user:$_grp $install_path
+chmod -R g+w $install_path
+chmod 440 /etc/sudoers
+
+echo
+echo
+echo " Step 2: done"
+echo " Use http://host/$fantomas_alias/ to configure Fantomas Iptconf!"
+echo 
+
+
+
+}
+
+######### --------------------------------------------------------
+
+fupdate() {
+
+[ ! -z "$install_path" ] && oldpath="$install_path"
+
+if [ ! -d "$oldpath" ]; then
+    echo "Update mode error: directory $oldpath is not found! exit."
+    exit 1
+fi
+if [ ! -f ./update.php ]; then
+    echo "Update mode error: could not found update.php! exit."
+    exit 1
+fi
+httpd_user=`cat "$httpd_conf_path" | awk '$1~/User/ && $2!~/\$/'`
+if [ -z "$httpd_user" ]; then
+    httpd_user="nobody"
+    _grp="nogroup"
+else 
+    _grp=`$_id $httpd_user -gn`
+fi
+if [ -z "$_grp" ]; then
+    echo "Could not found ID, exiting..."; exit 1
+fi
+
+_PHP=`which php`
+if [ ! -f "$_PHP" ]; then
+    echo "Update error: could not found PHP!"; exit 1
+fi
+sess_path=`$_PHP -i | grep session.save_path | awk '{print($3);}'`
+if [ -d "$sess_path" ]; then
+    chown -R $httpd_user $sess_path
+fi
+
+$_PHP ./update.php --oldpath:$oldpath
+
+
+}
+
+###---------------------------------------------------------
+
+install_path="/usr/local/fantomas"
+setup_mode=
+oldpath=
+if [ -f ./VERSION ]; then
+    version=`awk '$1~/version/ {print $2;}' VERSION`
+else 
+    version=0.0
+fi
+
+for arg in $*; do
+    arg=${arg// /}
+    [ -z "$arg" ] && continue
+    arg=${arg//--/}
+    case $arg in
+	check | config)
+	    setup_mode="config"
+	    ;;
+	install | setup)
+	    setup_mode="inst"
+	    ;;
+	fullinstall | fullsetup | configinstall | confsetup)
+	    setup_mode="fullinst"
+	    ;;
+	delete | uninstall)
+	    setup_mode="del"
+	    ;;
+	update | upgrade)
+	    setup_mode="update"
+	    ;;
+	*)
+	    [ "$setup_mode" == "update" ] && oldpath=$arg
+	    arg2=`echo $arg | awk '$0~/^prefix/ {gsub("prefix=",""); print($0);}'`
+	    [ ! -z "$arg2" ] && install_path="$arg2"
+	    arg2=
+	    arg2=`echo $arg | awk '$0~/^httpd_alias/ {gsub("httpd_alias=",""); print($0);}'`
+	    [ ! -z "$arg2" ] && fantomas_alias="$arg2"
+	    arg2=
+	    arg2=`echo $arg | awk '$0~/^dont_useradd/ { print($0);}'`
+	    [ ! -z "$arg2" ] && _create_login=0
+	    arg2=
+	    arg2=`echo $arg | awk '$0~/^useradd_login/ {gsub("useradd_login=",""); print($0);}'`
+	    [ ! -z "$arg2" ] && _loginname="$arg2"
+	    arg2=
+	    ;;
+    esac
+
+done
+
+if [ "$install_path" == "$(pwd)" ]; then
+    echo "Don't install Fantomas Iptconf into current distributive directory, choose other!"
+    echo "By default installer use /usr/local/fantomas."
+    exit 0
+fi
+
+
+case "$setup_mode" in
+    config)
+#	setup_mode="inst"
+	initcheck
+	;;
+    inst)
+#	setup_mode="inst"
+	initcheck
+	fsetup
+	;;
+    fullinst)
+	setup_mode="inst"
+	initcheck
+	fsetup
+	;;
+    update)
+	initcheck
+	fupdate
+	;;
+    del)
+	[ -f ./config.ini ] && rm -f ./config.ini
+	[ -f ./config.ini.bak ] && rm -f ./config.ini.bak
+	setup_mode="inst"
+	initcheck
+	fdelete
+	;;
+    *)
+	echo
+	echo -e "\033[1;34mFantomas Iptconf $version Console-part Installer\033[0m"
+	echo 
+	echo -e "\033[1mUsage:\033[0m ./setup [OPTIONS] <MODE>"
+	echo 
+	echo -e "\033[1mModes:\033[0m [config | install | configinstall | uninstall]"
+	echo 
+	echo -e "\033[1mOptions:\033[0m [--prefix=/full/path-to/install/dir]  "
+	echo "         [--httpd_alias=<aliasname>]"
+	echo "         [--useradd_login=<loginname> | --dont_useradd]"
+	echo
+	exit
+	;;
+esac
+
+
+exit 0
+
+

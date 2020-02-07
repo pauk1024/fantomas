@@ -1,0 +1,26 @@
+### table net123 zone
+
+ip route add 123.123.123.120/30 dev eth0 src 123.123.123.122 table net123
+ip route add 192.168.0.0/24 dev eth1 table net123 
+ip route add default via 123.123.123.121 table net123
+
+######### end zone
+
+### table net222 zone
+
+ip route add 222.222.222.220/30 dev eth2 src 222.222.222.222 table net222
+ip route add 192.168.0.0/24 dev eth1 table net222
+ip route add default via 222.222.222.221 table net222
+
+######### end zone
+
+### rules zone
+
+ip rule add from 123.123.123.122 table net123
+ip rule add from 222.222.222.222 table net222
+ip rule add fwmark 8 table net222
+ip rule add fwmark 3 table net123
+ip rule add fwmark 4 table net123
+ip rule add fwmark 5 table net123
+
+######### end zone

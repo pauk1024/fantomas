@@ -1,0 +1,323 @@
+BODY    {
+    FONT: 10pt arial;
+    BACKGROUND-COLOR: white;
+}
+A	{
+	text-decoration: underline;
+	color: 696969;
+}
+
+DIV A:hover { text-decoration:none; color:red }
+
+DIV.logo { height:135px; width:180px; padding:0; margin:0; }
+DIV.logo IMG { opacity:0.4; FILTER: alpha(opacity=40); padding:0; margin:0;  }
+DIV.logo DIV { display:inline; position:relative; top:115px; padding:0; margin:0; font-family: tahoma,sans-serif; font-weight:bold;font-size:14pt; color:330066; }
+
+A.a2 {font-family:arial; font-size:13pt; text-decoration:underline; color:696969; font-style:normal}
+
+.a1 {font-family:arial; font-size:7pt; text-decoration:underline; color:696969; font-style:normal}
+.a2 {font-family:arial; font-size:13pt; text-decoration:underline; color:696969; font-style:normal}
+
+FORM { padding:0px; margin:0px; }
+FORM INPUT[type=TEXT],INPUT[type=PASSWORD],TEXTAREA { background-color:ffffff; }
+FORM .typeText { background-color:ffffff; }
+FORM INPUT .typeCheck { background-color:ffffff; }
+FORM INPUT[type=CHECKBOX] { background-color:ffffff; } 
+FORM SELECT { background-color:ffffff; }
+
+HTML INPUT { z-index: expression( runtimeStyle.zIndex=1, 
+    type == "text" ? (className = "typeText") : 0,
+    type == "password" ? (className = "typeText") : 0
+    );
+}
+
+A:hover { text-decoration:none; color:red }
+
+.editable {
+	color: black;
+}
+.editable .selected {
+	background-color: #333399;
+	color: white;
+}
+.fixed {
+	color: #999999;
+}
+.fixed .selected {
+	color: #CCCCCC;
+	background-color: #333399;
+}
+.invisible {
+	font-style: italic;
+}
+IMG.icon {
+	padding: 0px;
+	border: 0px;
+	margin: 0px;
+	margin-left: -3px;
+	margin-right: 3px;
+}
+IMG.flag {
+	margin-top: 5px;
+}
+
+.packets1 { font-size:11px; font-style: italic}
+
+.top1 { font-family: Tahoma; font-size: 12pt; font-weight: bold; color:330066; }
+.top2 { font-family: Tahoma; font-size: 14pt; font-weight: bold; color:330066; }
+.top3 { font-family: tahoma,sans-serif; font-weight:bold;font-size:14pt; color:330066; }
+.error { font-family: Arial; font-size: 12pt; font-weight: bold; color:red; }
+
+.text01 { font-family: Tahoma; font-size: 8px; font-weight: normal; }
+.text1 { font-family: Tahoma; font-size: 9pt; font-weight: normal; }
+.text2 { font-family: Tahoma; font-size: 9pt; font-weight: normal; }
+.text10t { FONT: normal 10pt Tahoma; color:330066; }
+.text3 { font-family: Arial; font-size: 11pt; font-weight: normal; color:696969; }
+.text32 { font-family: Arial; font-size: 11pt; font-weight: normal; color:330066; }
+.text32b { FONT: bold 11pt Arial; color:330066; }
+.text42 { font-family: Tahoma; font-size: 11pt; font-weight: normal; color:696969; }
+.text42s { font-family: Tahoma; font-size: 11pt; font-weight: normal; color:330066; }
+.text40t { FONT: normal 10pt Tahoma; color:696969; }
+.text40v { FONT: normal 10pt Verdana; color:330066; }
+.text33 { font-family: Arial; font-size: 10pt; font-weight: normal; color:330066; }
+.text33i { font-family: Arial; font-size: 10pt; font-weight: normal; color:330066; font-style:italic; }
+.text4 { font-family: Arial; font-size: 9pt; font-weight: normal; color:696969; }
+.text41 { FONT: normal 9pt Arial; color:696969; }
+.text41t { FONT: normal 9pt Tahoma; color:696969; }
+.text5 { font-family: Arial; font-size: 9pt; font-weight: normal; color:696969; }
+.nolnk10 { FONT: bold 11pt Arial; text-decoration:none; color:330066; }
+
+TABLE.table1 { background-color:white; border-collapse:collapse; padding:2px; }
+TABLE.table1 TH { background-color:FAEBD7;  height:40px; FONT: normal 11pt Arial; border:1px; border-style:solid; border-color: f1ba8d; }
+TABLE.table1 .thp { background-color:FAEBD7;  height:35px; FONT: normal 10pt Tahoma; border:1px; border-style:solid; border-color: f1ba8d; }
+TABLE.table1 .thpn { background-color:FAEBD7; FONT: normal 10pt Tahoma; border:1px; border-style:solid; border-color: f1ba8d; }
+TABLE.table1 .thpn2 { background-color:FAEBD7; FONT: normal 8pt Arial; color:330066; border:1px; border-style:solid; border-color: f1ba8d; }
+TABLE.table1 TD { background-color:FFFBF0; FONT: normal 10pt Arial; color:696969; border:1px; border-style:dotted; border-color:f1ba8d; vertical-align:middle; }
+TABLE.table1 .td00 { background-color:FFFBF0; FONT: normal 10pt Arial; color:696969; border:0px; border-style:none; border-color: transparent; }
+TABLE.table1 .td00 INPUT[type=text],INPUT[type=password] { background-color:FFFFFF; FONT: normal 10pt Arial; color:696969; border:1px; border-style:solid; border-color:f1ba8d; }
+TABLE.table1 .td1 { background-color:FFF8DC; FONT: 10pt Arial; color:696969; }
+TABLE.table1 .td1bottom { background-color:FAEBD7; FONT: 10pt Arial,sans-serif; color:#000; border:0;}
+TABLE.table1 .tr1 { background-color:FAEBD7;  border:1px; border-style:solid; border-color:f1ba8d; }
+TABLE.table1 .td2 { background-color:FFFFFF; FONT: normal 10pt Arial; color:696969; border:0px; border-style:none; }
+TABLE.table1 .td3 { background-color:FFFBF0; FONT: normal 10pt Arial; color:696969; border:1px; border-style:solid; border-color: f1ba8d; }
+TABLE.table1 .td31 { background-color:FFFBF0; FONT: normal 10pt Arial; color:696969; border:1px; border-style:solid; border-color:FFDAB9; }
+TABLE.table1 .awho { background-color:FFFBF0; FONT: normal 10pt Arial; color:696969; text-decoration:none;  }
+TABLE.table1 TD A:hover { text-decoration:none; color:red }
+TABLE.table1 .a1 {font-family:arial; font-size:7pt; text-decoration:underline; color:696969; font-style:normal}
+TABLE.table1 .a14 { FONT: 14pt Arial; text-decoration:underline; color:696969;}
+TABLE.table1 .desci { FONT: italic 8pt Arial; color: 696969; }
+TABLE.table1 TD INPUT[type=TEXT],INPUT[type=CHECK],SELECT { background-color:FFFFFF; FONT: Normal 10pt Tahoma; color:330066; border:1px; border-style:solid; border-color:A6CAF0; }
+TABLE.table1 .seldiv {width:1px; background-color:FFFFFF; FONT: Normal 10pt Tahoma; color:330066;border:1px; border-style:solid; border-color:A6CAF0;  }
+TABLE.table1 input { border: expression( this.type=="text" ? 'solid 1px A6CAF0' : (this.type=="password" ? 'solid 1px A6CAF0' : 'inherit')); }
+TABLE.table1 SELECT { border: solid 1px A6CAF0; border-style:solid; border-color:A6CAF0; margin:-3px; }
+
+
+TABLE.table2 { background-color:white; border-collapse:collapse; }
+TABLE.table2 TH { background-color:AntiqueWhite; height:30px; FONT: bold 12pt Arial; border:1px; border-style:solid;border-color:e9b78f;}
+TABLE.table2 TH.th1 { background-color:AntiqueWhite; height:30px; FONT: bold 12pt Arial; border:1px; border-style:solid;border-color:f1c4a4;}
+TABLE.table2 TD { background-color:FFFFFF;  color:696969; text-decoration: none; font-size:11pt; border:0;}
+TABLE.table2 TD.tdl12 { background-color:f9eacb; FONT: bolder 10pt Tahoma; color:grey; border:1px; border-style:solid; border-color:ec9836;}
+TABLE.table2 TD.tdl1 { background-color:Cornsilk; FONT: bolder 10pt Tahoma; color:grey; border:1px; border-style:solid; border-color:e9b78f;}
+TABLE.table2 TD.tdl2 { background-color:fffbf0; FONT: normal 9pt Tahoma; color:grey; padding:4px; border:1px; border-right-style:solid; border-left-style:dotted; border-right-color:e9b78f; border-left-color:708090;}
+TABLE.table2 TD.tdl3 { background-color:Linen; FONT: normal 9pt Tahoma; color:grey; padding:4px; border:1px; border-right-style:dotted; border-left-style:solid; border-right-color:708090; border-left-color:e9b78f;}
+TABLE.table2 TD.tdl32 { background-color:Linen; FONT: normal 9pt Tahoma; color:grey; padding:4px; border:1px; border-style:dotted; border-color:708090;}
+TABLE.table2 TD.tdl4 { background-color:Snow; FONT: normal 9pt Tahoma; color:grey; padding:4px; border:1px; border-style:dotted; border-color:708090;}
+TABLE.table2 TD.tdl5 { background-color:OldLace; FONT: normal 9pt Tahoma; color:grey; padding:14px; border:1px; border-left-style:solid; border-top-style:dotted; border-right-style:solid;  border-bottom-style:solid; border-left-color:e9b78f; border-right-color:e9b78f; border-bottom-color:e9b78f; border-top-color:708090;}
+TABLE.table2 TD a { background-color:FFFFFF;  FONT: 10pt Arial; color:696969; text-decoration: underline;}
+TABLE.table2 .tah10 { background-color:FFFFFF;  border:1px; border-style:dotted; border-color: A6CAF0; }
+TABLE.table2 .a2 { FONT: bold 12pt arial; text-decoration:underline; color:696969;}
+TABLE.table2 .a3 { FONT: italic 11pt arial; text-decoration:underline; color:696969;}
+TABLE.table2 .td21 { background-color:FFFBF0;  FONT: normal 9pt Arial; color:330066; valign:top; }
+TABLE.table2 .top1 { font-family: Arial; font-size: 12pt; font-weight: bold; color:330066}
+TABLE.table2 .top2 { font-family: Arial; font-size: 11pt; font-weight: bold; color:330066}
+TABLE.table2 .top3 { font-family: Arial; font-size: 14pt; font-weight: bold; color:330066}
+TABLE.table2 .text21 { FONT: 10pt Arial; background-color:FFFFFF;  color:330066; text-decoration: none; }
+TABLE.table2 .text3 { background-color:FFFFFF;  color:696969; text-decoration: none; FONT: italic 9pt Arial; }
+TABLE.table2 .text4 { background-color:FFFFFF; FONT: bold 13pt Arial; color:696969; text-decoration: none;}
+TABLE.table2 .text41 { background-color:FFFFFF; FONT: normal 11pt Tahoma; color:696969; text-decoration: none;}
+TABLE.table2 A:hover { text-decoration:none; color:red }
+TABLE.table2 TABLE.tb4 { background-color:white; border:1px; border-style:solid; border-color:FFDAB9 }
+TABLE.table2 TABLE.tb4 TD { background-color:FFFBF0;  FONT: 11pt Arial; color:696969; }
+TABLE.table2 TABLE.tb44 { background-color:FFFBF0; border:1px; border-style:solid; border-color:f1ba8d; border-collapse:collapse; }
+TABLE.table2 TABLE.tb44 TD { background-color:FFFBF0;  FONT: 10pt Tahoma; color:696969; border:1px; border-style:dotted; border-color:f1ba8d; }
+TABLE.table2 TABLE.tb55 { background-color:FFFBF0; border:1px; border-style:solid; border-color:A6CAF0; border-collapse:collapse; }
+TABLE.table2 TABLE.tb55 TD { background-color:FFFBF0; padding-left:10px; FONT: 10pt Tahoma; color:696969; border:0px; border-bottom:1px; border-style:dotted; border-color:A6CAF0; }
+TABLE.table2 TABLE.tb55 TABLE TD { background-color:transparent; padding-left:0px; border:0; border-bottom:0; border-style:none; }
+TABLE.table2 TABLE.tb55 IMG { background-color:FFFBF0; border:0; border-bottom:0; border-style:none; }
+TABLE.table2 TABLE.tb55 .btn1 { border:1px; border-style:solid; border-color:A6CAF0; }
+TABLE.table2 TABLE.tb55 INPUT { 
+		background: expression( this.type=="submit" ? '#eee' : 'inherit'); 
+		background-color:expression( this.type=="submit" ? '#eee' : 'inherit'); 
+		border-left: expression( this.type=="submit" ? 'solid 1px #191970' : 'inherit'); 
+		border-right: expression( this.type=="submit" ? 'solid 1px #191970' : 'inherit'); 
+		border-top: expression( this.type=="submit" ? 'solid 1px #708090' : 'inherit'); 
+		border-bottom: expression( this.type=="submit" ? 'solid 1px #000080' : 'inherit'); 
+		}
+TABLE.table2 TABLE.tb55 INPUT[type=SUBMIT] { 
+		background: #eee; background-color: #eee; 
+		border-left: solid 1px #191970; 
+		border-right: solid 1px #191970; 
+		border-top: solid 1px #708090; 
+		border-bottom: solid 1px #000080; 
+		}
+
+TABLE.table2 TABLE.tb1 { background-color:white; border:0; }
+TABLE.table2 TABLE.tb1 TD { background-color:FFFFFF;  FONT: 11pt Arial; color:696969; padding-left:7px; padding-right:7px; }
+TABLE.table2 TABLE.tb1 A:hover { text-decoration:none; color:red }
+TABLE.table2 TABLE.tb1 .a11b { FONT: bold 11pt Arial; text-decoration:underline; color:696969;}
+TABLE.table2 TABLE.tb1 .a11 { FONT: 11pt Arial; text-decoration:underline; color:696969;}
+TABLE.table2 TD INPUT[type=TEXT],INPUT[type=PASSWORD],SELECT { background-color:FFFFFF; FONT: Normal 10pt Tahoma; color:330066; border:1px; border-style:solid; border-color:e9b78f; }
+TABLE.table2 .seldiv {width:1px; background-color:FFFFFF; FONT: Normal 10pt Tahoma; color:330066;border: 1px; border-style:solid; border-color:e9b78f;  }
+TABLE.table2 input { border: expression( this.type=="text" ? 'solid 1px e9b78f' : (this.type=="password" ? 'solid 1px e9b78f' : 'inherit')); }
+TABLE.table2 SELECT { border: solid 1px e9b78f; border-style:solid; border-color:e9b78f; margin:-3px; }
+
+
+
+TABLE.table4 { background-color:FFFBF0; border:1px; border-style:solid; border-color:f1ba8d; border-collapse:collapse; }
+TABLE.table4 TH { background-color:FAEBD7; height:40px; FONT: 12pt Arial; }
+TABLE.table4 .brd1 { background-color:FAEBD7; FONT: 10pt Tahoma; height:10px; }
+TABLE.table4 TD { background-color:FFFBF0;  FONT: 11pt Tahoma; color:696969;  padding-left:12px; padding-right:12px; }
+TABLE.table4 .wbrd {  border:1px; border-style:dotted; border-color: f1ba8d; }
+TABLE.table4 .wbrd1 {  border-bottom:1px; border-bottom-style:dotted; border-bottom-color: f1ba8d; border-top:1px; border-top-style:dotted; border-top-color: f1ba8d;}
+TABLE.table4 .top1 { font-family: Arial; font-size: 12pt; font-weight: bold; color:330066}
+TABLE.table4 .top2 { font-family: Arial; font-size: 11pt; font-weight: bold; color:330066}
+TABLE.table4 .td1 { background-color:FFFFF0;  FONT: 9pt Arial; color:708090; }
+TABLE.table4 .text4 { background-color:FFFFF0;  FONT: 12pt Arial; color:330066; }
+TABLE.table4 .td2 { background-color:FFFFFF;  FONT: 9pt Arial; color:696969; }
+TABLE.table4 .td21 { background-color:FFFBF0;  FONT: normal 9pt Tahoma; color:696969; valign:top; }
+TABLE.table4 .td3 { background-color:FFFFFF;  FONT: 10pt Arial; color:696969; }
+TABLE.table4 .td410 { background-color:FFFBF0;  FONT: 10pt Arial; color:696969; padding:1px; margin:1px; }
+TABLE.table4 .f410 { background-color:FFFBF0;  FONT: bold 10pt Tahoma; color:330066; }
+TABLE.table4 .f410n { background-color:FFFBF0;  FONT: normal 10pt Tahoma; color:330066; }
+TABLE.table4 .bgw { background-color:FFFFFF; FONT: normal 10pt Tahoma; color:330066; }
+TABLE.table4 .tah10 { background-color:FFFBF0;  FONT: normal 10pt Tahoma; color:696969; border:1px; border-style:dotted; border-color: f1ba8d; }
+TABLE.table4 .tah10c { background-color:FFFBF0;  FONT: normal 10pt Tahoma; color:330066; border:1px; border-style:dotted; border-color: f1ba8d;}
+TABLE.table4 .tah11c { background-color:FFFBF0;  FONT: normal 10pt Verdana; color:330066; border:1px; border-style:dotted; border-color: f1ba8d;}
+TABLE.table4 .td4 { background-color:FFFBF0;  FONT: italic 9pt Arial; color:708090; }
+TABLE.table4 .atools { FONT: 8pt Tahoma; text-decoration:underline; color:696969; }
+TABLE.table4 TABLE.notable1 { background-color:transparent; border-collapse:collapse; margin:0; border:0px; border-style:none; }
+TABLE.table4 TABLE.notable1 TD { background-color:transparent; margin:0; border:0; border-style:none; FONT: normal 10pt Verdana; color:330066; }
+TABLE.table4 .inputbrd { border: solid 1px f1ba8d; border-style:solid; border-color:f1ba8d; background-color:FFFFFF; FONT: Normal 10pt Tahoma; color:330066;  }
+TABLE.table4 .seldiv {width:1px; background-color:FFFFFF; FONT: Normal 10pt Tahoma; color:330066; border:1px; border-style:solid; border-color:f1ba8d;  }
+TABLE.table4 INPUT[type=TEXT],INPUT[type=PASSWORD],TEXTAREA,SELECT { background-color:FFFFFF; FONT: Normal 10pt Tahoma; color:330066; border:1px; border-style:solid; border-color:f1ba8d; }
+TABLE.table4 input { border: expression( this.type=="text" ? 'solid 1px f1ba8d' : (this.type=="password" ? 'solid 1px f1ba8d' : 'inherit')); }
+TABLE.table4 SELECT { border: solid 1px f1ba8d; border-style:solid; border-color:f1ba8d; margin:-3px; }
+
+TABLE.notable { background-color:transparent; border-collapse:collapse; padding:2px; margin:0; border:0;border-style:none;border-color:transparent; }
+TABLE.notable TD { background-color:transparent; padding:0; margin:0; border:0; border-style:none; }
+TABLE.notable .text41 { FONT: normal 9pt Arial; color:696969; background-color:transparent; padding:0; margin:0; border:0; border-style:none;  }
+TABLE.notable .td41 { FONT: normal 9pt Arial; color:330066; background-color:transparent; padding:0; margin:0; border:0; border-style:none;  }
+TABLE.notable .a3 { FONT: italic 11pt arial; text-decoration:underline; color:330066;}
+TABLE.notable TD .td5 { background-color:transparent; padding:5px; margin:5px; border:0; border-style:none; }
+TABLE.notable .tdpadd { background-color:transparent; padding-left:15px; padding-right:0px; margin:0; border:0; border-style:none; }
+TABLE.notable TD INPUT[type=TEXT],SELECT { background-color:FFFFFF; FONT: Normal 10pt Tahoma; color:330066; }
+
+TABLE.gogo { background-color:transparent; margin:0; padding:0; border:0;border-style:none;border-color:transparent; border-collapse:collapse;}
+TABLE.gogo TD { background-color:transparent; FONT: Normal 8pt Arial; color:330066; margin:0; padding:0; }
+TABLE.gogo TD INPUT[type=TEXT],SELECT { background-color:FFFFFF; FONT: Normal 8pt Arial; color:330066; padding:0; margin:0; border:1px; border-style:solid; border-color:f1ba8d; }
+TABLE.gogo .selspan {width:1px; background-color:FFFFFF; FONT: Normal 8pt Tahoma; color:330066; border:1px; border-style:solid; border-color:f1ba8d; padding:0; margin:0;}
+
+TABLE.netable { background-color:transparent; border-collapse:collapse; border:0;border-style:none;border-color:transparent; }
+TABLE.netable TD { background-color:transparent; border:0; border-style:none; }
+TABLE.netable TD INPUT[type=TEXT],SELECT { background-color:FFFFFF; FONT: Normal 10pt Tahoma; color:330066; }
+
+
+DIV.divbtnout { height:20px; background-color:transparent; border:1px; border-style:solid; border-color:f1ba8d; text-align:center; }
+DIV.divbtnout A { FONT: normal 11pt Arial; color:696969; text-decoration:none; }
+DIV.divbtnout A:hover { FONT: normal 11pt Arial; color:696969; text-decoration:none; }
+DIV.divbtnout FORM.auth1 DIV { width:80px; }
+
+DIV.divbtnon { height:20px; background-color:f1ba8d; border:1px; border-style:solid; border-color:f1ba8d;  text-align:center; }
+DIV.divbtnon A { FONT: normal 11pt Arial; color:FFFFFF; text-decoration:none; }
+DIV.divbtnon A:hover { FONT: normal 11pt Arial; color:FFFFFF; text-decoration:none; }
+
+TABLE.table5 { background-color:white; border:1px; border-style:solid; border-color:A6CAF0; border-collapse:collapse; }
+TABLE.table5 TH { background-color:FAEBD7; height:40px; FONT: normal 13px Arial; }
+TABLE.table5 .thpol { background-color:FAEBD7; height:26px; FONT: normal 8pt Tahoma; color:330066; border:1px; border-style:dotted; border-color:A6CAF0; padding-left:5px; padding-right:5px; vertical-align:middle; }
+TABLE.table5 TD { background-color:FFFFFF;  FONT: normal 11pt Arial; color:696969; border:1px; border-style:dashed; border-color:A6CAF0; padding-left:4px; padding-right:4px;}
+TABLE.table5 FORM { background-color:transparent;  border:0; border-style:none; border-color:transparent; padding-left:1px; padding-right:1px; }
+TABLE.table2 TD A { background-color:transparent;  FONT: 10pt Arial; color:696969;}
+TABLE.table5 .top1 { font-family: Arial; font-size: 12pt; font-weight: bold; color:000080}
+TABLE.table5 .td42 { background-color:FFFBF0;  FONT: 11pt Tahoma; color:696969; }
+TABLE.table5 .td42ye { background-color:FFF8DC;  FONT: 11pt Tahoma; color:696969; }
+TABLE.table5 .td42ye0 { background-color:FFF8DC;  FONT: 10pt Tahoma; color:696969; border:0; border-style:none; padding-left:15px; padding-right:15px; padding-top:6px; padding-bottom:6px; }
+TABLE.table5 .td41 { background-color:FFFBF0;  FONT: normal 10pt Tahoma; color:696969; padding-left:10px;padding-right:10px; }
+TABLE.table5 .td41ye { background-color:FFF8DC;  FONT: normal 10pt Tahoma; color:696969; padding-left:10px;padding-right:10px; }
+TABLE.table5 .td41ye0 { background-color:FFF8DC;  FONT: normal 10pt Tahoma; color:696969; padding-left:10px;padding-right:10px; border:0; border-style:none; }
+TABLE.table5 .td42c { background-color:FFFBF0;  FONT: normal 10pt Arial; color:330066; padding-left:8px; padding-right:8px; }
+TABLE.table5 .td33i { background-color:FFFFFF;  FONT: italic 10pt Arial; color:696969; }
+TABLE.table5 .td2 { background-color:FFFFFF;  FONT: normal 11pt Arial; color:696969; border:0px; border-style:none; }
+TABLE.table5 .td3 { background-color:FFFFFF;  FONT: italic 10pt Arial; color:696969; }
+TABLE.table5 .frm1 { background-color:FFFFFF;  FONT: normal 10pt Arial; color:330066; padding-left:10px; }
+TABLE.table5 .desci {  background-color:FFFBF0; FONT: italic 8pt Arial; color: 696969; padding:3px; }
+TABLE.table5 .tddesk { background-color:FFFBF0;  FONT: 9pt Tahoma; color:696969; padding:3px; border:0;border-style:none; }
+TABLE.table5 .frmdesk { background-color:FFFFFF;  FONT: 9pt Tahoma; color:330066; padding:3px; }
+TABLE.table5 .tdfrm { background-color:FFFFFF;  FONT: 9pt Tahoma; color:330066; padding:0px; border:1px;border-style:solid;border-color:A6CAF0; }
+TABLE.table5 .tdfrm11 { background-color:FFFFFF;  FONT: 10pt Tahoma; color:330066; padding:0px; }
+TABLE.table5 .tdfrm2 { FONT: 9pt Tahoma; color:330066; padding:0; }
+TABLE.table5 .tddesk33 { background-color:FFFBF0;  FONT: 9pt Tahoma; color:333399; padding:3px; }
+TABLE.table5 IMG { padding:1px; margin:0; border:0; }
+TABLE.table5 TABLE TD { background-color:transparent; padding:0px; FONT: normal 8pt Tahoma; color:330066; border:0; }
+TABLE.table5 TABLE { background-color:transparent; border:0; }
+TABLE.table5 .inputbrd { background-color:FFFFFF; FONT: Normal 10pt Tahoma; color:330066; border:1px; border-style:solid; border-color:A6CAF0; }
+TABLE.table5 TD INPUT[type=TEXT], SELECT { background-color:FFFFFF; FONT: Normal 10pt Tahoma; color:330066; border:1px; border-style:solid; border-color:A6CAF0; }
+TABLE.table5 .seldiv {width:1px; background-color:FFFFFF; FONT: Normal 10pt Tahoma; color:330066;border:1px; border-style:solid; border-color:A6CAF0;  }
+TABLE.table5 input { border: expression( this.type=="text" ? 'solid 1px A6CAF0' : (this.type=="password" ? 'solid 1px A6CAF0' : 'inherit')); }
+TABLE.table5 SELECT { border: solid 1px A6CAF0; border-style:solid; border-color:A6CAF0; margin:-3px; }
+
+TABLE.table5e { background-color:FFFBF0; border:1px; border-style:solid; border-color:A6CAF0; border-collapse:collapse; }
+TABLE.table5e TH { background-color:FAEBD7; height:40px; FONT: normal 13px Arial; }
+TABLE.table5e .thpol { background-color:FAEBD7; height:26px; FONT: normal 8pt Tahoma; color:330066; border:1px; border-style:dotted; border-color:A6CAF0; padding-left:5px; padding-right:5px; vertical-align:middle; }
+TABLE.table5e TD { background-color:FFF8DC;  FONT: normal 10pt Tahoma; color:696969; border:0; border-style:none; padding-left:15px; padding-right:15px; padding-top:6px; padding-bottom:6px; }
+TABLE.table5e TD.borderbottom { background-color:FFF8DC;  FONT: normal 10pt Tahoma; color:696969; border-bottom:1px; border-bottom-style:solid; border-bottom-color:A6CAF0; padding-left:15px; padding-right:15px; padding-top:6px; padding-bottom:6px; }
+TABLE.table5e .top1 { font-family: Arial; font-size: 12pt; font-weight: bold; color:000080}
+TABLE.table5e .top2 { font-family: Arial; font-size: 11pt; font-weight: bold; color:330066}
+TABLE.table5e .td42 { background-color:FFFBF0;  FONT: 11pt Tahoma; color:696969; }
+TABLE.table5e .td42ye { background-color:FFF8DC;  FONT: 11pt Tahoma; color:696969; }
+TABLE.table5e .td42ye0 { background-color:FFF8DC;  FONT: 10pt Tahoma; color:696969; border:0; border-style:none; padding-left:15px; padding-right:15px; padding-top:6px; padding-bottom:6px; }
+TABLE.table5e IMG { padding:1px; margin:0; border:0; }
+TABLE.table5e TABLE TD { background-color:transparent; padding:0px; FONT: normal 8pt Tahoma; color:330066; }
+TABLE.table5e TABLE { background-color:transparent; }
+TABLE.table5e FORM INPUT[type=TEXT], FORM INPUT[type=CHECKBOX], FORM SELECT { background-color:transparent; FONT: Normal 10pt Tahoma; color:330066; border:1px; border-style:solid; border-color:A6CAF0; }
+TABLE.table5e .seldiv {width:1px; background-color:transparent; FONT: Normal 10pt Tahoma; color:330066;border:1px; border-style:solid; border-color:A6CAF0;  }
+TABLE.table5e input { border: expression( this.type=="text" ? 'solid 1px A6CAF0' : (this.type=="password" ? 'solid 1px A6CAF0' : 'inherit')); }
+TABLE.table5e SELECT { border: solid 1px A6CAF0; border-style:solid; border-color:A6CAF0; margin:-3px; }
+
+TABLE.table5d { background-color:white; border:1px; border-style:dashed; border-color:A6CAF0; border-collapse:collapse; }
+TABLE.table5d TD { background-color:FFFFFF;  FONT: normal 10pt Tahoma; color:696969; border:0; border-style:none; padding:2px; }
+TABLE.table5d .top1 { font-family: Arial; font-size: 12pt; font-weight: bold; color:000080}
+TABLE.table5d IMG { padding:1px; margin:0; border:0; }
+TABLE.table5d TABLE TD { background-color:transparent; padding:0px; FONT: normal 8pt Tahoma; color:330066; }
+TABLE.table5d TABLE { background-color:transparent; }
+TABLE.table5d FORM INPUT[type=TEXT], FORM SELECT { background-color:FFFFFF; FONT: Normal 10pt Tahoma; color:330066; border:1px; border-style:solid; border-color:A6CAF0; }
+TABLE.table5d .seldiv {width:1px; background-color:FFFFFF; FONT: Normal 10pt Tahoma; color:330066;border:1px; border-style:solid; border-color:A6CAF0;  }
+TABLE.table5d input { border: expression( this.type=="text" ? 'solid 1px A6CAF0' : (this.type=="password" ? 'solid 1px A6CAF0' : 'inherit')); }
+TABLE.table5d SELECT { border: solid 1px A6CAF0; border-style:solid; border-color:A6CAF0; margin:-3px; }
+
+TABLE.table21 { background-color:white; border:1px; border-style:dotted; border-color:FFDAB9 }
+TABLE.table21 TH { background-color:FAEBD7; FONT: normal 11pt Arial; color: 330066 }
+TABLE.table21 TD { background-color:FFFBF0;  color:696969; border:0; font-size:10pt; }
+
+TABLE.table3 { background-color:white; border:0px; border-collapse:collapse;  }
+TABLE.table3 TH { background-color:FAEBD7; height:30px; FONT: 12pt Arial; font-weight: bold; border:0;}
+TABLE.table3 TD { background-color:FFFBF0; color:696969; text-decoration: none; FONT:10pt Arial; border:1px; border-style:solid; border-color:ecb87b; padding-left:10px; padding-right:10px; }
+TABLE.table3 FORM INPUT[type=text], FORM INPUT[type=password] { background-color:ffffff; }
+
+TABLE.table31 { background-color:white; border-collapse:collapse; }
+TABLE.table31 TH { background-color:FAEBD7; height:20px; FONT: normal 12pt Verdana,sans-serif; border:1px; border-style:solid; border-color:e9b78f;}
+TABLE.table31 TD { background-color:FFFBF0; color:696969; text-decoration: none; FONT: normal 9pt Tahoma; padding-left:15px; padding-right:15px; border:1px; border-style:solid; border-color:e9b78f;}
+TABLE.table31 TH A { color:#000; text-decoration:none; }
+TABLE.table31 TH A:hover { color:orange; text-decoration:underline; }
+TABLE.table31 .subt1 { color:696969; text-decoration: none; FONT: italic 9pt Arial; }
+
+TABLE.table32 { background-color:white; border-collapse:collapse; border:1px; border-style:solid; border-color:e9b78f; }
+TABLE.table32 TD { background-color:FFFBF0; color:696969; FONT: normal 9pt Tahoma; padding-left:5px; padding-right:5px;}
+TABLE.table32 TD INPUT[type=TEXT],INPUT[type=PASSWORD],SELECT { background-color:FFFFFF; FONT: Normal 10pt Tahoma; color:330066; border:1px; border-style:solid; border-color:e9b78f; }
+TABLE.table32 .seldiv {width:1px; background-color:FFFFFF; FONT: Normal 10pt Tahoma; color:330066;border:1px; border-style:solid; border-color:e9b78f;  }
+TABLE.table32 input { border: expression( this.type=="text" ? 'solid 1px e9b78f' : (this.type=="password" ? 'solid 1px e9b78f' : 'inherit')); }
+TABLE.table32 SELECT { border:1px; border-style:solid; border-color:#e9b78f; margin:-3px; }
+
+.divmess { background-color:FFFBF0; border:1px; border-style:solid; border-color:f1ba8d;  text-align:center; FONT: normal 11pt Arial; color: 330066; width:40%; padding:1px; margin:0;}
+
+
+IMG { border:0; }
