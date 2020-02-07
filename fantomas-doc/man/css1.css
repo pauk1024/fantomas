@@ -1,0 +1,63 @@
+BODY { background:fcfdff; font-family:arial; font-size:11pt;  }
+A { color:000080; text-decoration:underline }
+a:hover { color:red; text-decoration:none }
+h1.coment1 { margin-left:25px;margin-top:4px;margin-bottom:4px;font-size:10pt;font-weight:normal;font-style:normal}
+h1.coment2 { margin-left:25px;margin-top:4px;margin-bottom:4px;font-size:11pt;font-weight:normal;font-style:italic}
+h1.coment3 { margin-left:25px;margin-top:4px;margin-bottom:4px;FONT: italic 9pt Arial;}
+
+p.par1 { text-ident:25px; margin-top:4px;margin-bottom:4px;font-size:11pt }
+
+.top0 { font-family: tahoma; font-size:18pt; font-weight:bold; font-style:normal }
+.text1 { font-family: arial; font-size:11pt; font-weight:normal; font-style:normal }
+.top1 { font-family: arial; font-size:14pt; font-weight:bold; font-style:normal }
+
+TABLE.table1 { border:0; }
+TABLE.table1 TD.td1 { font-family:arial; font-size:12pt; width:70px; }
+TABLE.table1 TD.td1_90 { font-family:arial; font-size:12pt; width:100px; }
+TABLE.table1 TD.td1_100 { font-family:arial; font-size:12pt; width:100px; }
+TABLE.table1 TD.td2 { font-family:arial; font-size:12pt;}
+TABLE.table1 TD.td2pl20 { font-family:arial; font-size:12pt; padding-left:20px  }
+TABLE.table1 TD.tdpl70 { font-family:arial; font-size:12pt; padding-left:70px }
+TABLE.table1 TD.tdpl50 { font-family:arial; font-size:12pt; padding-left:45px }
+TABLE.table1 TD.tdpl30 { font-family:arial; font-size:12pt; padding-left:30px }
+TABLE.table1 TD.tdpl15 { font-family:arial; font-size:12pt; padding-left:15px }
+TABLE.table1 TD.td3 { font-family:tahoma; font-size:11pt; }
+TABLE.table1 TD A { color:blue; text-decoration:underline }
+TABLE.table1 TD A.nolnk { color:000000; text-decoration:none }
+TABLE.table1 TD A.nolnkb { color:000000; text-decoration:none;font-weight:bolder; }
+TABLE.table1 TD a:hover { color:red; text-decoration:none }                      
+TABLE.table1 TD LI { list-style-type:circle; }
+TABLE.table1 TD LI.disc { list-style-type:disc; }
+TABLE.table1 TD LI.subpoint { list-style-type:disc;padding-left:60px;FONT: bolder 11pt Arial; }
+TABLE.table1 .top1 { font-family: arial; font-size:17pt; font-weight:bold; font-style:normal }
+TABLE.table1 .top2 { font-family: arial; font-size:14pt; font-weight:bold; font-style:normal }
+TABLE.table1 .top3 { font-family: arial; font-size:12pt; font-weight:bold; font-style:normal }
+TABLE.table1 .text1 { font-family:tahoma; font-size:11pt; font-weight:normal; font-style:normal; color:696969 }
+TABLE.table1 .text5 { FONT: bold 12pt Arial; color:000000; }
+TABLE.table1 .text2 { font-family: arial; font-size:11pt; font-weight:normal; font-style:italic }
+TABLE.table1 .text3 { font-family: arial; font-size:11pt; font-weight:normal; font-style:normal; color:696969 }
+TABLE.table1 .text33 { font-family: arial; font-size:11pt; font-weight:bold; font-style:normal; color:696969 }
+TABLE.table1 TD p.par1 { text-ident:25px; margin-top:4px;margin-bottom:4px;font-size:11pt }
+TABLE.table1 .itu1 { text-decoration:underline;font-style:italic }
+TABLE.table1 TD IMG { margin:12px; border:1px; border-style:dashed; border-color:transparent;}
+
+
+TABLE.table0 { border:0; padding-left:50px; line-height:70%; }
+TABLE.table0 TD { font-family:tahoma; font-size:10pt; width:auto; padding:0; margin:0; }
+TABLE.table0 TD.td1 { font-family:arial; font-size:11pt; width:110px; }
+TABLE.table0 TD.td1left { font-family:arial; font-size:10pt;width:auto;padding:0px; }
+TABLE.table0 .razd { FONT: bolder 11pt Arial; }
+TABLE.table0 TD.td1r2 { FONT: normal 11pt Arial; width:50px;padding-left:35px; }
+TABLE.table1 .ind1 { list-style-type:disc;FONT: bolder 11pt Arial; }
+TABLE.table0 .points { border-bottom:1px; border-bottom-style:dotted; border-bottom-color:696969;padding:0px; margin:3px; display:inline; }
+TABLE.table0 .nopoints { border-bottom:0px; border-bottom-style:none; border-bottom-color:696969;padding:0px; margin:3px; display:inline; } 
+TABLE.table0 TD.td1_90 { font-family:arial; font-size:11pt;  padding-left:35px; width:110px; }
+TABLE.table0 TD.td1_100 { font-family:arial; font-size:11pt; width:100px; }
+TABLE.table0 TD.td2 { font-family:arial; font-size:11pt;}
+TABLE.table0 TD.td2pl20 { font-family:arial; font-size:11pt; padding-left:0px;}
+TABLE.table0 TD.tdpl70 { font-family:arial; font-size:11pt; padding-left:70px }
+TABLE.table0 TD.tdpl50 { font-family:arial; font-size:11pt; padding-left:45px }
+TABLE.table0 TD.tdpl30 { font-family:arial; font-size:11pt; padding-left:30px }
+TABLE.table0 TD.tdpl15 { font-family:arial; font-size:11pt; padding-left:15px }
+TABLE.table0 A { color:000080; text-decoration:none; }
+TABLE.table0 A:hover { color:red; text-decoration:underline; }

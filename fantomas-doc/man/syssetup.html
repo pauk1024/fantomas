@@ -1,0 +1,367 @@
+<!doctype html public "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1251">
+<meta http-equiv="Expires" content="<Mon, 01 Jan 1990 00:00:01 GMT">
+<link rel="stylesheet" type="text/css" href="css1.css">
+<title> Fantomas Iptconf :: Документация :: Подготовка системы</title>
+</head>
+<body>
+<table class=table1 width="75%"><tr><td class=td3 width="100%">
+<font class=top1>
+<a name="top" class=nolnk>2. Подготовка системы</a></font><br><br>
+<br><p>&nbsp&nbsp&nbsp Этот раздел посвящен подготовке системы к установке Fantomas. <br> 
+Цинично? Вряд ли... Fantomas использует не один модуль Netfilter, при этом объединяя их функционал в себе. Поэтому и процесс подготовки к установке Fantomas заключается прежде всего в подготовке к использованию Netfilter. <br>
+В принципе, этот процесс мало чем отличается от создания обычной LAMP-платфомы, за исключением пакета ulog-1.24, а также момента конфигурирования и сборки ядра.<br><br>
+&nbsp&nbsp&nbsp Раздел создавался как пошаговое руководство для начинающих пользователей Linux, которым этот раздел настойчиво рекомендуется к обязательному и полному прочтению! 
+&nbsp&nbsp&nbsp Для более опытных Коллег этот раздел может быть полезен как справочное руководство.<br><br>
+&nbsp&nbsp&nbsp За подробной документацией по настройке каждого программного пакета обращайтесь на сайт разработчика или ищите мануал в архиве со скачанным дистрибутивом, поверьте, разработчики специально для Вас тратят уйму времени на написание документации. :)<br><br>
+Да, и еще - рассматриваться будет сборка софта из исходников. Тем кому это не по душе - делайте по своему, главное чтоб результат был таким же (опять же, если Вы новичек, рекомендую все таки ознакомиться).
+</p><br>
+<noindex>
+<table class=table1 width="70%">
+<tr><td class=td1 align=middle> 2.1 </td><td class=td2>&nbsp&nbsp&nbsp <a href="syssetup.html#kernel">Ядро</a>   </td></tr>
+<tr><td class=td1 align=middle> 2.2 </td><td class=td2>&nbsp&nbsp&nbsp <a href="syssetup.html#iptables">Iptables</a>   </td></tr>
+<tr><td class=td1 align=middle> 2.3 </td><td class=td2>&nbsp&nbsp&nbsp <a href="syssetup.html#ipset">Ipset</a>   </td></tr>
+<tr><td class=td1 align=middle> 2.4 </td><td class=td2>&nbsp&nbsp&nbsp <a href="syssetup.html#mysql">MySQL</a>   </td></tr>
+<tr><td class=td1 align=middle> 2.5 </td><td class=td2>&nbsp&nbsp&nbsp <a href="syssetup.html#ulog">Ulogd</a>   </td></tr>
+<tr><td class=td1 align=middle> 2.6 </td><td class=td2>&nbsp&nbsp&nbsp <a href="syssetup.html#apache">Apache</a>   </td></tr>
+<tr><td class=td1 align=middle> 2.7 </td><td class=td2>&nbsp&nbsp&nbsp <a href="syssetup.html#php">PHP</a>   </td></tr>
+</table>
+</noindex>
+<br><br><hr><br><br>
+<h3><a name="wtf" class=nolnk>2.1 Ядро </a></h3>
+<br>
+<br><p> Думаю не имеет смысла говорить о дистрибутивах, их особенностях и тонкостях установки - это, имхо, выходит за рамки данного мануала. Я полагаю что у Вас уже установлена система и произведена первичная настройка.  </p>
+<br><p>&nbsp&nbsp&nbsp Ядро берем <noindex><a href="ftp://ftp.kernel.org/pub/linux/kernel/v2.6/" target=_otherw>отсюда</a></noindex>, файл имеет имя вроде "linux-2.6.х.х.tar.gz". Определите какое ядро подлежит скачиванию, затем можно воспользоваться командой консоли: <br>
+	<blockquote class=text1>wget ftp://ftp.kernel.org/pub/linux/kernel/v2.6/linux-2.6.x.x.tar.gz  </blockquote>
+</p>
+<br>
+<p> &nbsp&nbsp&nbsp Дальше так:<br>
+	<blockquote class=text1> 
+		     tar -zxvf linux-2.6.x.x.tar.gz <br>
+		     cd linux-2.6.x.x <br>
+		     make menuconfig <br>
+		     <h1 class=coment1>#*** Режим конфигурирования в виде меню выдает имена опций ядра в подробном виде, поэтому некоторым новичкам порой бывает сложно найти нужную опцию. Если для Вас более привычны краткие имена опций вида "CONFIG_KERNEL_OPTION", то лучше попробуйте по классике: </h1>
+		     make config <br>
+	</blockquote>
+	&nbsp&nbsp&nbsp Если Вы еще не научились собирать ядро "с закрытыми глазами", то при конфигурировании меняйте только те опции, значение которых Вам известно, в крайнем случае конфигурирование можно отложить и прочитать доку, и потом оперировать уже знакомыми опциями. Это поможет избежать проблем. <br>
+	&nbsp&nbsp&nbsp Включите следующие опции: <br>
+	<blockquote class=text1> 
+	CONFIG_PACKET <br>
+	CONFIG_NETFILTER <br>
+	CONFIG_NETFILTER_ADVANCED <br>
+	CONFIG_NF_CONNTRACK <br>
+	CONFIG_NF_CONNTRACK_MARK <br>
+	CONFIG_NF_CONNTRACK_SECMARK <br>
+	CONFIG_NF_CONNTRACK_FTP <br>
+	CONFIG_NF_CONNTRACK_H323 <br>
+	CONFIG_NF_CONNTRACK_IRC <br>
+	CONFIG_NF_CONNTRACK_NETBIOS_NS <br>
+	CONFIG_NF_CONNTRACK_PPTP <br>
+	CONFIG_NF_CONNTRACK_SIP <br>
+	CONFIG_NF_CONNTRACK_TFTP <br>
+	CONFIG_NETFILTER_XTABLES <br>
+	CONFIG_NETFILTER_XT_TARGET_MARK <br>
+	CONFIG_NETFILTER_XT_TARGET_NFLOG <br>
+	CONFIG_NETFILTER_XT_TARGET_NFQUEUE <br>
+	CONFIG_NETFILTER_XT_MATCH_CONNMARK <br>
+	CONFIG_NETFILTER_XT_MATCH_CONNTRACK <br>
+	CONFIG_NETFILTER_XT_MATCH_IPRANGE <br>
+	CONFIG_NETFILTER_XT_MATCH_MAC <br>
+	CONFIG_NETFILTER_XT_MATCH_MARK <br>
+	CONFIG_NETFILTER_XT_MATCH_MULTIPORT <br>
+	CONFIG_NETFILTER_XT_MATCH_QUOTA <br>
+	CONFIG_NETFILTER_XT_MATCH_SOCKET <br>
+	CONFIG_NETFILTER_XT_MATCH_STATE <br>
+	CONFIG_NETFILTER_XT_MATCH_STRING <br>
+	CONFIG_NF_CONNTRACK_IPV4<br>
+	CONFIG_NF_CONNTRACK_PROC_COMPAT<br>
+	CONFIG_IP_NF_QUEUE <br>
+	CONFIG_IP_NF_IPTABLES <br>
+	CONFIG_IP_NF_MATCH_ADDRTYPE <br>
+	CONFIG_IP_NF_TARGET_REJECT <br>
+	CONFIG_IP_NF_TARGET_LOG <br>
+	CONFIG_IP_NF_TARGET_ULOG <br>
+	CONFIG_IP_NF_NAT <br>
+	CONFIG_IP_NF_NAT_NEEDED <br>
+	CONFIG_IP_NF_TARGET_MASQUERADE <br>
+	CONFIG_IP_NF_TARGET_NETMAP <br>
+	CONFIG_IP_NF_TARGET_REDIRECT <br>
+	CONFIG_IP_NF_NAT_PROTO_GRE <br>
+	CONFIG_IP_NF_NAT_PROTO_UDPLITE <br>
+	CONFIG_IP_NF_NAT_FTP <br>
+	CONFIG_IP_NF_NAT_IRC <br>
+	CONFIG_IP_NF_NAT_TFTP <br>
+	CONFIG_IP_NF_NAT_PPTP <br>
+	CONFIG_IP_NF_NAT_H323 <br>
+	CONFIG_IP_NF_NAT_SIP <br>
+	CONFIG_IP_NF_MANGLE <br>
+	</blockquote>
+	
+</p>
+<p> &nbsp&nbsp&nbsp Дальше:
+	<blockquote class=text1>
+	     make <br>
+	     <h1 class=coment1>#*** Если у Вас debian-based система, то выполните команду (в redhat-based системах это обычно автоматизировано): </h1>
+	     <blockquote>
+	     make bzImage <br>
+	     </blockquote>
+	     make modules_install install <br>
+	     <h1 class=coment1>#*** Для debian-based систем далее еще один шаг:</h1>
+	     <blockquote>
+		mkinitramfs -o /boot/initrd-&ltkernelversion&gt &ltkernelversion&gt<br>
+	     </blockquote>
+	     <h1 class=coment1>#*** Пример: mkinitramfs -o /boot/initrd-2.6.33.2 2.6.33.2</h1>
+
+	</blockquote>
+
+</p>
+<p>&nbsp&nbsp&nbsp Если все прошло без ошибок, то дальше идем в /boot/grub (если у Вас grub :), сначала в надпапке убеждаемся что новый образ системы встал на место, потом находим grub.conf, открываем текстовым редактором и убеждаемся что строки для загрузки нового ядра присутствуют в конфиге.<br>
+	Если в строке <b>default</b> указан номер записи старого ядра <i>( они нумеруются сверху вниз начиная с 0 )</i>, можете поправить эту опцию для загрузки по умолчанию нового ядра. 
+	Ни в коем случае не ставьте в опцию <b>timeout</b> слишком маленькое значение (!), т.к. если Ваше новое ядро по какой то причине не загрузится, то Вы всегда при перезагрузке сможете выбрать старое ядро, под которым спокойно допилите глюки нового, избежав тем самым серьезного гемороя.
+</p>
+<noindex><a href="syssetup.html#top">Наверх</a> &nbsp&nbsp <a href="./../index.html">Содержание</a></noindex><br>
+<br><br><hr><br><br>
+<h3><a name="iptables" class=nolnk>2.2 Iptables </a></h3>
+<br><br>
+
+<p>&nbsp&nbsp&nbsp Берем свежую версию iptables <noindex><a href="ftp://ftp.netfilter.org/pub/iptables/" target=_otherw>отсюда</a></noindex>. На момент написания этой доки самая свежая версия - 1.4.4:
+	<blockquote class=text1> 
+		wget ftp://ftp.netfilter.org/pub/iptables/iptables-1.4.4.tar.bz2
+	</blockquote>
+</p>
+<p>&nbsp&nbsp&nbsp Дальше:
+	<blockquote class=text1> 
+		tar -jxvf iptables-1.4.4.tar.bz2 <br>
+		cd iptables-1.4.4 <br>
+		./configure --enable-libipq --with-kernel=/full_path/to/your/kernel/dir <br>
+		make <br>
+		make install 
+	</blockquote>
+
+</p>
+<p>&nbsp&nbsp&nbsp Все, можете сделать <i>"service iptables restart"</i> или посмотреть что скажет <i>"iptables --version"</i>.
+</p>
+<noindex><a href="syssetup.html#top">Наверх</a> &nbsp&nbsp <a href="./../index.html">Содержание</a></noindex><br>
+<br><br><br><hr><br><br>
+<h3><a name="ipset" class=nolnk>2.3 Ipset </a></h3>
+<br><br>
+<p>&nbsp&nbsp&nbsp Все тоже самое для ipset. Качаем свежую версию <noindex><a href="ftp://ftp.netfilter.org/pub/ipset/" target=_otherw>отсюда</a></noindex>. На момент написания этой доки это - 2.5.0:
+	<blockquote class=text1> 
+		wget ftp://ftp.netfilter.org/pub/ipset/ipset-2.5.0.tar.bz2
+	</blockquote>
+</p>
+<p>&nbsp&nbsp&nbsp Дальше:
+	<blockquote class=text1> 
+		tar -jxvf ipset-2.5.0.tar.bz2 <br>
+		cd ipset-2.5.0 <br>
+		KERNEL_DIR=/full_path/to/your/kernel/dir make <br>
+		KERNEL_DIR=/full_path/to/your/kernel/dir make install <br>
+	</blockquote>
+<br>
+   &nbsp&nbsp&nbsp Далее, если версия iptables у нас старше чем 1.4.4, а версия ipset - 3.0, то делаем так: <br>
+	<blockquote class=text1> 
+		cp kernel/include/linux/netfilter_ipv4/ip_set.h /full-path/to/src/iptables-1.4.4/include/linux/netfilter_ipv4 <br>
+		cd /full-path/to/src/iptables-1.4.4 <br>
+		make <br>
+		make install <br>
+	</blockquote>
+
+</p>
+<noindex><a href="syssetup.html#top">Наверх</a> &nbsp&nbsp <a href="./../index.html">Содержание</a></noindex><br>
+<br><br><br><hr><br><br>
+<h3><a name="mysql" class=nolnk>2.4 MySQL </a></h3>
+<br><br>
+<p>&nbsp&nbsp&nbsp Качаем <noindex><a href="http://dev.mysql.com/downloads/mysql/5.1.html#source" target=_otherw>отсюда</a></noindex>. На момент написания этой доки свежая версия - 5.1.36:
+	<blockquote class=text1> 
+		wget http://dev.mysql.com/get/Downloads/MySQL-5.1/mysql-5.1.36.tar.gz/from/ftp://mirror.anl.gov/pub/mysql/
+	</blockquote>
+</p>
+<p>&nbsp&nbsp&nbsp Распаковываем и ставим:
+	<blockquote class=text1> 
+		tar -zxvf mysql-5.1.36.tar.gz <br>
+		cd mysql-5.1.36 <br>
+		groupadd mysql <br>
+		useradd -g mysql mysql <br>
+		./configure --prefix=/usr/local/mysql --with-charset=utf8<br>
+		make <br>
+		make install <br>
+		cp support-files/my-medium.cnf /etc/my.cnf <br>
+		cp support-files/mysql.server /etc/init.d/mysqld <br>
+		chmod 755 /etc/init.d/mysqld <br>
+		chkconfig --add mysqld <br>
+		cd /usr/local/mysql <br>
+		chown -R mysql . <br>
+		chgrp -R mysql . <br>
+		bin/mysql_install_db --user=mysql <br>
+		chown -R root . <br>
+		chown -R mysql var <br>
+		service mysqld start <br>
+		/usr/local/mysql/bin/mysqladmin -u root -h localhost password 'newpasswd' <br>
+<br>
+		#*** откройте файл /etc/my.cnf и добавьте туда строки: <br>
+		<blockquote>
+			[mysql_safe] <br>
+			log-error=/var/log/mysqld.log <br>
+			pid-file=/var/run/mysql/mysqld.pid <br>
+		</blockquote>
+		service mysqld restart <br>
+		echo "/usr/local/mysql/lib/mysql" >>/etc/ld.so.conf <br>
+		ldconfig <br>
+		<br>
+		<font style="font-size:10pt;font-style:italic">З.Ы.: можете попробовать отконфигурить с опцией --disable-shared, возможно это поможет избежать ошибки поиска динамических библиотек при сборке ulogd. Хотя, когда я собирал для себя, то не парился и сделал как описано ниже по сценарию. Работает.<br></font>
+	</blockquote>
+</p>
+<p>&nbsp&nbsp&nbsp Все, если все прошло успешно, то с mysql мы закончили.
+</p>
+<noindex><a href="syssetup.html#top">Наверх</a> &nbsp&nbsp <a href="./../index.html">Содержание</a></noindex><br>
+<br><br><br><hr><br><br>
+<h3><a name="ulog" class=nolnk>2.5 Ulogd </a></h3>
+<br>
+<p>&nbsp&nbsp&nbsp Ulogd лучше всего брать с git разработчиков (в нем есть последние исправления, на ftp их нет): 
+	<blockquote class=text1> 
+		git clone git://git.netfilter.org/ulogd.git
+	</blockquote>
+</p>
+<p>Далее: <br>
+
+	<blockquote class=text1> 
+		cd ulogd <br>
+		autoconf <br>
+	</blockquote> 
+</p>
+<p>Если нет git, можно взять <noindex><a href="ftp://ftp.netfilter.org/pub/ulogd/ulogd-1.24.tar.bz2" target=_otherframe>ulogd-1.24.tar.bz2</a></noindex> с FTP Netfilter, а потом <noindex><a href="./../../dwnld/ulogd-1.24_072009_patch.diff" target=_otherw>взять патч</a></noindex> с моего сайта, там же где и сам Fantomas. Положить оба файла в один каталог, например в /usr/src, и обработать:<br>
+	<blockquote class=text1> 
+		tar -jxvf ulogd-1.24.tar.bz2 <br>
+		patch -p1 &ltulogd-1.24_072009_patch.diff <br>
+		cd ulogd-1.24 <br>
+	</blockquote> 
+</p>
+<p> Конфигурим и ставим: <br>
+	<blockquote class=text1> 
+		ln -s -t include/ /usr/local/mysql/include/mysql &nbsp&nbsp&nbsp#***<font style="font-size:9pt"> пусть будут под носом, иначе он их может и вовсе не найти ... </font><br>
+		./configure --with-mysql --prefix=/usr<br>
+		make <br>
+		<h1 class=coment1>#*** Если при сборке возникнет ошибка "ld: bad -rpath option", то в этом же каталоге открываем файл Rules.make, находим строчку <b>"MYSQL_LDFLAGS=$(LDFLAGS) -rdynamic -L/usr..."</b> и из этой строки убираем <b>"-rdynamic"</b>, сохраняем файл и выходим из него. Снова делаем <b>make</b>, должно собраться нормально.</blokquote><br></h1>
+		make install <br>
+		cp ulogd.init /etc/init.d/ulogd <br> 
+		chmod 755 /etc/init.d/ulogd <br>
+		chkconfig --add ulogd <br>
+		chkconfig --levels 345 ulogd on <br>
+	</blockquote>
+</p>
+<p> Поставили? Теперь поправим конфиг ulogd - для этого в каталоге <font class=text1>/usr/etc</font> (прим.: если при сборке префикс был указан /usr) находим файл ulogd.conf, открываем для редактирования, и после строчки <font class=text1># output plugins</font> и после раскомментируем следующую строку:<br>
+	<blockquote class=text1> 
+		<br>
+		plugin="/usr/lib/ulogd/ulogd_MYSQL.so"<br>
+		<h1 class=coment1>#*** Строку <b>plugin="/usr/lib/ulogd/ulogd_LOGEMU.so"</b> лучше закомментировать, иначе демон ulogd будет писать лог сетевого трафика не только в MySQL, но и локально в лог-файл на диске. Т.к. нас будет интересовать база MySQL, то дублировать гигабайты информации в текстовый лог на диске смысла нет. <br></h1>
+	</blockquote>
+    Остальные строчки в списке плагинов можно не трогать. Дальше ниже в конфиге находим секцию <font class=text1>[MYSQL]</font> и указываем для ulogd параметры соединения с mysql: <br>
+	<blockquote class=text1> 
+		[MYSQL]<br>
+		table="ulog"<br>
+		pass="12345"<br>
+		user="root"<br>
+		db="ulogd"<br>
+		host="localhost"<br>
+	</blockquote> 
+</p>
+<p> Но это еще не все.. Дальше идем в каталог с дистрибутивом ulogd, из которого мы только что ставили демон и делаем следующее: <br>
+	<blockquote class=text1> 
+		cd doc<br>
+		/usr/local/mysql/bin/mysql -u root -p<br>
+		<h1 class=coment1>#*** Дальше в консоли mysql:</h1>
+		create database ulogd;<br>
+		use ulogd;<br>
+		source ./mysql.table<br>
+		quit<br>
+		<h1 class=coment1>#*** Вышли из mysql, запускаем демон:</h1>
+		service ulogd start<br>
+	</blockquote> 	
+</p>
+<p> Если все прошло успешно, то с ulogd все. Просмотрите лог демона чтобы убедиться в корректности его работы.
+</p>
+<noindex><a href="syssetup.html#top">Наверх</a> &nbsp&nbsp <a href="./../index.html">Содержание</a></noindex><br>
+<br><br><br><hr><br><br>
+<h3><a name="apache" class=nolnk>2.6 Apache </a></h3>
+<br>
+<p>&nbsp&nbsp&nbsp Как известно, существует несколько веток версий httpd. В общем-то не принципиально какую Вы будете использовать, ставятся они почти одинаково несложно, поэтому я опишу установку Apache 2.0, который я выбрал для себя. <br>
+&nbsp&nbsp&nbsp Качаем <noindex><a href="http://httpd.apache.org/download.cgi" target=_otherw>отсюда</a></noindex>. На момент написания этой доки актуальная версия - 2.0.63:
+	<blockquote class=text1> 
+		wget http://www.sai.msu.su/apache/httpd/httpd-2.0.63.tar.gz
+	</blockquote>
+</p>
+<p>&nbsp&nbsp&nbsp Распаковываем и ставим:
+	<blockquote class=text1> 
+		tar -zxvf httpd-2.0.63.tar.gz <br>
+		cd httpd-2.0.63 <br>
+		./configure --prefix=/www --enable-so <br>
+		make <br>
+		make install <br>
+		cp build/rpm/httpd.init /etc/init.d/httpd <br>
+		chkconfig --add httpd <br>
+		chkconfig --levels 345 httpd on <br>
+<br>
+		#*** откройте файл /etc/init.d/httpd и поправьте пути к файлам в строках <b>apachectl</b> и <b>httpd</b> вместо /usr/sbin/* на /www/bin/*, а затем чуть ниже аналогично поправьте путь к конфигу httpd в строке <b>CONFFILE</b>. <br>
+	</blockquote>
+</p>
+<p>&nbsp&nbsp&nbsp Дальше открываем файл /www/conf/httpd.conf и настраиваем ServerAdmin, ServerName, DocumentRoot. <br>
+<br>
+Теперь следует уделить немного внимания безопасности веб-сервера. Подробно мы на этом останавливаться не будем, т.к. в Интернет можно найти огромное количество документации на эту тему. 
+Минимально достаточная настройка выглядит примерно так: <br>
+	<blockquote class=text1> 
+		&nbsp&nbsp В файле httpd.conf найдите строчку <b>&ltDirectory "/www/htdocs"&gt</b>, и ниже, в строчке Options уберите поддержку Indexes. <br>
+		&nbsp&nbsp Если нет необходимости просматривать страницы Apache из интернет, то можете вообще в httpd.conf в строке Listen указать бинд на внутренний адрес строкой вида "Listen 192.168.0.1:80". <br>
+		&nbsp&nbsp Впрочем, если нужно чтоб Apache был виден из интернет, то ничего страшного, Fantomas об этом позаботится, в разделе 4 читайте внимательней про файл конфигурации и переменную allowed_ip :). <br>
+		&nbsp&nbsp Позаботьтесь о пути окружения для root, он задается в /root/.bash_profile в строке PATH, впишите туда все нужные каталоги bin, включая каталоги /../mysql/bin, если их там нет. <br>
+		&nbsp&nbsp Если на машине есть демоны ssh или telnet, то перевесьте их на другие порты, логически непонятные для непосвещенного. Это конечно не спасет от пристального взгляда вроде "nmap -sV", но хоть немного скроет Ваш порт от лишних глаз. И обязательно отключите доступ по сети к этим демонам для root, в ssh к примеру в конфиге укажите "PermitRootLogin no". Для доступа используйте любой другой логин, не имеющий админских прав, ну а после входа, соответственно, делаем su.<br>
+		&nbsp&nbsp И еще немаловажно: не вешайте на этот сервер ничего лишнего из того что может привлечь взгляд, тогда возможно Вам и не прийдется отбиваться от заинтересованных.  <br>
+	</blockquote>
+</p>
+<noindex><a href="syssetup.html#top">Наверх</a> &nbsp&nbsp <a href="./../index.html">Содержание</a></noindex><br>
+<br><br><br><hr><br><br>
+<h3><a name="php" class=nolnk>2.7 PHP </a></h3>
+<br>
+<p> &nbsp&nbsp&nbsp Качаем <noindex><a href="http://www.php.net/downloads.php" target=_otherw>отсюда</a></noindex>. На момент написания актуальная версия - 5.2.13:
+	<blockquote class=text1> 
+		wget http://ru2.php.net/get/php-5.2.13.tar.gz/from/ru.php.net/mirror
+	</blockquote>
+</p>
+<p>&nbsp&nbsp&nbsp Распаковываем и ставим:
+	<blockquote class=text1> 
+		tar -zxvf php-5.2.13.tar.gz <br>
+		cd php-5.2.13 <br>
+		cd ext <br>
+<br>
+		<h1 class=coment1>#*** Качаем <a href="http://pecl.php.net/package/ssh2" target=_blank>отсюда</a> модуль расширения PHP - ssh2, сохраняем прямо в текущем каталоге (ext). На момент написания документации свежая версия - 0.11.0: </h1><br>
+		wget http://pecl.php.net/get/ssh2-0.11.0.tgz <br>
+		tar -zxvf ssh2-0.11.0.tgz <br>
+		mv ssh2-0.11.0 ssh2 <br>
+		cd .. <br>
+<br>
+		<h1 class=coment1>#*** Вернулись в каталог с исходниками PHP, теперь удаляем старый скрипт configure и генерируем новый: </h1><br>
+		rm configure <br>
+		./buildconf --force <br>
+<br>
+		<h1 class=coment1>#*** Дальше все как обычно - конфигурим, собираем и устанавливаем: </h1><br>
+		./configure --with-apxs2=/www/bin/apxs --with-mysql=/usr/local/mysql --with-ssh2 <br>
+		make <br>
+		make install <br>
+		cp php.ini-dist /usr/local/lib/php.ini <br>
+<br>
+		#*** откройте файл httpd.conf и убедитесь в наличии строк <b>LoadModule php5_module modules/libphp5.so</b> и <b>AddType application/x-httpd-php .php .phtml</b>, если их там нет - впишите рядом с похожими строками. В параметре <b>DirectoryIndex</b> к имеющейся строке добавьте <b>index.php</b> <br>
+<br>
+		service httpd restart
+	</blockquote>
+</p>
+<noindex><a href="syssetup.html#top">Наверх</a> &nbsp&nbsp <a href="./../index.html">Содержание</a></noindex><br>
+<br><br><br><hr><br><br>
+<noindex><a href="..\index.html">Назад</a></noindex>
+<br><br><br>
+
+
+</td></tr></table>
+
+</body>
+</html>
