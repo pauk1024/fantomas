@@ -1,0 +1,292 @@
+<?php
+
+function netcalc($addr,$mode="") 
+{
+// netcalc() function based on ipcalc.php (c) 2007, HarpyWar (harpywar@gmal.com)
+// original source: http://harpywar.com/files/items/ipcalc.txt
+    function addnull($binstr)
+    {
+	return str_pad($binstr,8,"0",STR_PAD_LEFT);
+    }
+#  ------------------------------------------
+    function bincalc($bin1,$bin2,$calc=1) 
+    {
+	//распределение символов по массивам
+	$result1 = preg_split('//', $bin1, -1, PREG_SPLIT_NO_EMPTY);
+	$result2 = preg_split('//', $bin2, -1, PREG_SPLIT_NO_EMPTY);
+	for ($i=0;$i!=8;$i++) {
+	    if ($calc==1) //сложение (1+1=1; 1+0=1; 0+0=0)
+	    {
+		if ($result1[$i]=="1" or $result2[$i]=="1")
+		    $result3[$i]="1";
+		else
+		    $result3[$i]="0";
+	    } elseif($calc==2) {
+		//вычитание (первый бит должен быть всегда больше второго (1-1=0; 1-0=1; 0-0=0))
+		if ($result2[$i]=="0")
+		    $result3[$i]="1";
+		else
+		    $result3[$i]="0";
+	    } elseif ($calc==3) {
+		//логическое И (1+1=1; 1+0=0; 0+1=0; 0+0=0)
+		if ($result1[$i]=="1" and $result2[$i]=="1")
+		    $result3[$i]="1";
+		else
+		    $result3[$i]="0";
+	    }
+	}
+	return implode("", $result3); //объединить массив в строку
+    }
+#  ------------------------------------------
+
+
+    if( !$addr) return(FALSE);
+    
+    list($ip,$mask)=explode("/",$addr);
+    $mask=( !$mask) ? "24":$mask;
+    if( !$ip) return(FALSE);
+
+    list($b1,$b2,$b3,$b4)=explode(".",$ip);
+    $bit_ip1=addnull(decbin($b1));
+    $bit_ip2=addnull(decbin($b2));
+    $bit_ip3=addnull(decbin($b3));
+    $bit_ip4=addnull(decbin($b4));
+    
+    $bit_ip=$bit_ip1.".".$bit_ip2.".".$bit_ip3.".".$bit_ip4;
+
+
+    if (substr_count($mask,".")>0) {
+	list($ip_mask1,$ip_mask2,$ip_mask3,$ip_mask4)=explode(".",$mask);
+	$ip_mask=$mask;
+	$bit_mask1=addnull(decbin($ip_mask1));
+	$bit_mask2=addnull(decbin($ip_mask2));
+	$bit_mask3=addnull(decbin($ip_mask3));
+	$bit_mask4=addnull(decbin($ip_mask4));
+
+	$bit_mask=$bit_mask1.".".$bit_mask2.".".$bit_mask3.".".$bit_mask4;
+    } else {
+	$bit_mask=""; 
+	for ($i=1;$i!=33;$i++) {
+	    if ($i<=$mask) $bit_mask.="1";
+	    else $bit_mask.="0";
+	    if($i==8 or $i==16 or $i==24) $bit_mask.=".";
+	}
+	list($bit_mask1,$bit_mask2,$bit_mask3,$bit_mask4)=explode(".",$bit_mask);
+	
+	$ip_mask1=bindec($bit_mask1);
+	$ip_mask2=bindec($bit_mask2);
+	$ip_mask3=bindec($bit_mask3);
+	$ip_mask4=bindec($bit_mask4);
+
+	$ip_mask=$ip_mask1.".".$ip_mask2.'.'.$ip_mask3.'.'.$ip_mask4;
+    }
+    
+    $bitcount=substr_count($bit_mask,"1"); 
+    if(( $bitcount<0) || ( $bitcount>32)) return(FALSE);
+
+    $cisco_bit_mask1=bincalc("11111111",$bit_mask1,2);
+    $cisco_bit_mask2=bincalc("11111111",$bit_mask2,2);
+    $cisco_bit_mask3=bincalc("11111111",$bit_mask3,2);
+    $cisco_bit_mask4=bincalc("11111111",$bit_mask4,2);
+    $cisco_mask1=bindec($cisco_bit_mask1);
+    $cisco_mask2=bindec($cisco_bit_mask2);
+    $cisco_mask3=bindec($cisco_bit_mask3);
+    $cisco_mask4=bindec($cisco_bit_mask4);
+
+    $cisco_mask=$cisco_mask1.".".$cisco_mask2.".".$cisco_mask3.".".$cisco_mask4;
+    $cisco_bit_mask=$cisco_bit_mask1.".".$cisco_bit_mask2.".".$cisco_bit_mask3.".".$cisco_bit_mask4;
+
+    $net_bit_ip1=bincalc($bit_ip1,$bit_mask1,3);
+    $net_bit_ip2=bincalc($bit_ip2,$bit_mask2,3);
+    $net_bit_ip3=bincalc($bit_ip3,$bit_mask3,3);
+    $net_bit_ip4=bincalc($bit_ip4,$bit_mask4,3);
+    $net_ip1=bindec($net_bit_ip1);
+    $net_ip2=bindec($net_bit_ip2);
+    $net_ip3=bindec($net_bit_ip3);
+    $net_ip4=bindec($net_bit_ip4);
+
+    $net_min_ip=$net_ip1.".".$net_ip2.".".$net_ip3.".".($net_ip4+1);
+    $net_min_bit_ip=$net_bit_ip1.".".$net_bit_ip2.".".$net_bit_ip3.".".addnull(decbin($net_ip4+1));
+
+    $bc_bit_ip1=bincalc($bit_ip1,$cisco_bit_mask1);
+    $bc_bit_ip2=bincalc($bit_ip2,$cisco_bit_mask2);
+    $bc_bit_ip3=bincalc($bit_ip3,$cisco_bit_mask3);
+    $bc_bit_ip4=bincalc($bit_ip4,$cisco_bit_mask4);
+    $bc_ip1=bindec($bc_bit_ip1);
+    $bc_ip2=bindec($bc_bit_ip2);
+    $bc_ip3=bindec($bc_bit_ip3);
+    $bc_ip4=bindec($bc_bit_ip4);
+
+    $net_max_ip=$bc_ip1.".".$bc_ip2.".".$bc_ip3.".".($bc_ip4-1);
+    $net_max_bit_ip=$bc_bit_ip1.".".$bc_bit_ip2.".".$bc_bit_ip3.".".addnull(decbin($bc_ip4-1));
+
+    $bc_ip=$bc_ip1.".".$bc_ip2.".".$bc_ip3.".".$bc_ip4;
+    $bc_bit_ip=$bc_bit_ip1.".".$bc_bit_ip2.".".$bc_bit_ip3.".".$bc_bit_ip4;
+
+    $host_count=abs(pow(2, 32-$bitcount)-2);
+
+    if($bitcount>=16 and $bitcount<=32) 
+	if (substr($net_bit_ip1, 0, 1)=="0") $host_class="Class A";
+	elseif (substr($net_bit_ip1, 0, 2)=="10") $host_class="Class B";
+	elseif (substr($net_bit_ip1, 0, 3)=="110") $host_class="Class C";
+	elseif (substr($net_bit_ip1, 0, 4)=="1110") $host_class="Class D";
+	elseif (substr($net_bit_ip1, 0, 5)=="11110") $host_class="Class E";
+    else $host_class="Class invalid";
+
+#   результаты
+
+    if(( $mode=="0") || ( $mode=="cisco_mask")) {
+	$result=$cisco_mask;
+    } elseif(( $mode=="1") || ( $mode=="min_ip")) {
+	$result=$net_min_ip;
+    } elseif(( $mode=="2") || ( $mode=="max_ip")) {
+	$result=$net_max_ip;
+    } elseif(( $mode=="3") || ( $mode=="bcast")) {
+	$result=$bc_ip;
+    } elseif(( $mode=="4") || ( $mode=="host_count")) {
+	$result=$host_count;
+    } elseif(( $mode=="5") || ( $mode=="host_class")) {
+	$result=$host_class;
+    } else {
+	$result=array(
+		"cisco_mask" => $cisco_mask,
+		"min_ip" => $net_min_ip,
+		"max_ip" => $net_max_ip,
+		"bcast" => $bc_ip,
+		"host_count" => $host_count,
+		"class" => $host_class
+	    );
+    }
+    return($result);
+}
+
+#----------------------------------------------------------------------------------------
+function getIPlist($fromIP,$toIP)
+{
+    if(( !$fromIP) || ( !$toIP))
+	return(FALSE);
+    list($bf1,$bf2,$bf3,$bf4)=explode(".",$fromIP);
+    list($bt1,$bt2,$bt3,$bt4)=explode(".",$toIP);
+    $list=array();
+    $index=1;
+    
+    for($i1=$bf1;$i1<=$bt1;$i1++) {
+	$oct1=$i1;
+	for($i2=$bf2;$i2<=$bt2;$i2++) {
+	    $oct2=$i2;
+	    for($i3=$bf3;$i3<=$bt3;$i3++) {
+		$oct3=$i3;
+		for($i4=$bf4;$i4<=$bt4;$i4++) {
+		    $oct4=$i4;
+		    $list[$index]=$oct1.".".$oct2.".".$oct3.".".$oct4;
+		    $index++;
+		}
+	    }
+	}
+    }
+    return($list);
+}
+#----------------------------------------------------------------------------------------
+function isHost($addr)
+{
+    if( !$addr) return(FALSE);
+    $result=FALSE;
+    list($ip,$mask)=explode("/",$addr);
+    if( !$ip) return(FALSE);
+    list($b1,$b2,$b3,$b4)=explode(".",$ip);
+    if( !$mask) $result=( $b4=="0") ? FALSE:TRUE;
+    return( $result);
+}
+#----------------------------------------------------------------------------------------
+// Checksum calculation function
+function icmpChecksum($data)
+{
+    if (strlen($data)%2)
+	$data .= "\x00";
+    $bit = unpack('n*', $data);
+    $sum = array_sum($bit);
+    while ($sum >> 16) $sum=($sum >> 16)+($sum & 0xffff);
+    return pack('n*', ~$sum);
+}
+#----------------------------------------------------------------------------------------
+function netls($addr)
+{
+    global $sockets_count;
+    
+    if( !$addr) return(FALSE);
+// Making the package
+    $type= "\x08";
+    $code= "\x00";
+    $checksum= "\x00\x00";
+    $identifier = "\x00\x00";
+    $seqNumber = "\x00\x00";
+    $data= "Scarface";
+    $package = $type.$code.$checksum.$identifier.$seqNumber.$data;
+    $checksum = icmpChecksum($package); // Calculate the checksum
+    $package = $type.$code.$checksum.$identifier.$seqNumber.$data;
+
+    if( isHost($addr)) {
+	exec("ping -c 1 -w 200 $addr",$out,$rr);
+	$result=( $rr==0) ? TRUE:FALSE;
+    } else {
+	$result=array();
+	if( !$aopt=netcalc($addr)) return(FALSE);
+	$alist=getIPlist($aopt["min_ip"],$aopt["max_ip"]);
+	
+	$socks_amo=( !$sockets_count) ? 32:$sockets_count;
+	$queue=array();
+	for($i=1;$i<=$socks_amo;$i++) $queue[$i]=array( "ip" => "", "alistkey" => "", "socket" => "");
+	
+	while( current($alist)) {
+	
+	    for($i=1;$i<=$socks_amo;$i++) {
+		$queue[$i]=array(
+				"ip" => current($alist),
+				"alistkey" => key($alist),
+			    );
+		$queue[$i]["socket"]=socket_create(AF_INET,SOCK_RAW,1);
+#		or die("error creating socket: ".socket_strerror(socket_last_error()));
+		
+		socket_set_option($queue[$i]["socket"],SOL_SOCKET,SO_RCVTIMEO,array("sec"=>1,"usec"=>0));
+		socket_set_nonblock($queue[$i]["socket"]);
+		socket_connect($queue[$i]["socket"],$queue[$i]["ip"],null);
+		socket_send($queue[$i]["socket"],$package,strlen($package),0);
+
+		if( !next($alist)) break;
+	    }
+	    usleep(150000);
+	    
+	    for($i=1;$i<=$socks_amo;$i++) {
+		if(( !$queue[$i]["ip"]) || ( !$queue[$i]["alistkey"]) || ( !$queue[$i]["socket"])) continue;
+		$s="";
+		if( is_resource($queue[$i]["socket"])) {
+		    $s=socket_read($queue[$i]["socket"],32);
+		    socket_close($queue[$i]["socket"]);
+		}
+		
+		if( !$s) unset($alist[$queue[$i]["alistkey"]]);
+		$queue[$i]=array(
+			    "ip" => "",
+			    "alistkey" => "",
+			    "socket" => ""
+			);
+		
+	    }
+	
+	}
+
+    }
+    return($alist);
+}
+
+if( !$argv[1]) 
+    die("Give me subnet address to scan!");
+
+$sockets_count=32;
+
+if( $aa=netls($argv[1]))
+    foreach($aa as $ip) print("$ip\n");
+
+exit(0);
+
+?>
